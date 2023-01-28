@@ -240,8 +240,11 @@ double fQrdir(const arma::mat& ar,
   }
   
   if(npv > 0){
+    // cout<<accu(ar)<<endl;
+    // cout<<accu(vr)<<endl;
     out       += (0.5*arma::accu(ar%vr%ar.t()));
   }
+  // cout<<out<<endl;
   
   return out;
 }

@@ -478,15 +478,17 @@ mcmcDirNet <- function(network,
     cat(pot_ath, "\n")
     
     thetap    <- fsimtheta(theta, Sigma, jstheta, npar)  #**
-    
+    # cat("thetap", thetap, "\n")
+    # cat("sum(uvp)", sum(uvp[[1]]), "\n")
     # utility at thetap
     uup       <- futil(M, Xu, uup, thetap[1:nparu], nparu, nvec, inter.u) #**
-    uvp       <- futil(M, Xv, uvp, theta[(nparu + 1):(nparu + nparv)], nparv, nvec, inter.v) #**
+    uvp       <- futil(M, Xv, uvp, thetap[(nparu + 1):(nparu + nparv)], nparv, nvec, inter.v) #**
     uwp       <- futil(M, Xw, uwp, thetap[(nparu + nparv + 1):npar], nparw, nvec, inter.w) #**
     
     # potential function at a (ie, network) and thetap
     pot_athp  <- fpotendir(M, network, uup, uvp, uwp, nparu, nparv, nparw, nvec) #**
-    
+    # cat("sum(uvp)", sum(uvp[[1]]), "\n")
+    # cat("pot_athp ", pot_athp, "\n")
     # Gibbs to simulate ap
     networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
       fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
@@ -522,8 +524,13 @@ mcmcDirNet <- function(network,
 # function that computes the utilities
 futil        <- function(M, X, u, theta, npar, nvec, inter){
   if(!is.null(X)){
+    # cat("npar ", npar, "\n")
+    # cat("theta ", theta, "\n")
+    # cat("** ", sum(X[[1]]), "\n")
+    # cat("** ", sum(u[[1]]), "\n")
     u        <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
       futility(X[[m]], theta, npar, nvec[m], inter)}}
+  # cat("** ", sum(u[[1]]), "\n")
   u
 }
 
