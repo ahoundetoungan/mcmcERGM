@@ -1,0 +1,17 @@
+Package: mcmcERGM
+Encoding: UTF-8
+Version: 0.0.1
+Type: Package
+Title: Using MCMC to simulate the posterior distribution of the parameters of an Exponential Random Graph Models
+Date: 2023-03-01
+Authors@R: c(person("Yves", "Zenou",  role = c("aut"), email =  "yves.zenou@monash.edu"), person("Michael", "Vlassopoulos",  role = c("aut"), email =  "M.Vlassopoulos@soton.ac.uk"), person("Elysée Aristide", "Houndetoungan",  role = c("cre","aut"), email =  "ariel92and@gmail.com"))
+Description: Simulates the posterior distribution of the parameters of an Exponential Random Graph Models.
+License: GPL-3
+BugReports: https://github.com/ahoundetoungan/mcmcERGM/issues
+URL: https://github.com/ahoundetoungan/mcmcERGM
+LazyData: true
+Depends: R (>= 3.5.0)
+Imports: Rcpp (>= 1.0.0), Formula, formula.tools, parallel, doParallel, foreach, doRNG
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
