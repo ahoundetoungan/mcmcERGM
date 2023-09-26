@@ -5,9 +5,9 @@
 \title{Simulate networks using an exponential random symmetric graph model}
 \usage{
 simSymNet(
-  formula.u,
+  formula.v,
   formula.w,
-  f_to_var.u,
+  f_to_var.v,
   f_to_var.w,
   theta,
   size = NULL,
@@ -15,6 +15,8 @@ simSymNet(
   nblock = 2,
   ncores = 1,
   simunet = 1000,
+  fgraph = NULL,
+  fsubgraph = NULL,
   data = NULL
 )
 }

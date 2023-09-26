@@ -53,3 +53,11 @@ fIDdir <- function(M, nvec) {
     .Call(`_mcmcERGM_fIDdir`, M, nvec)
 }
 
+frMtoV <- function(u, N, M) {
+    .Call(`_mcmcERGM_frMtoV`, u, N, M)
+}
+
+frMceiltoV <- function(u, N, M) {
+    .Call(`_mcmcERGM_frMceiltoV`, u, N, M)
+}
+

@@ -562,7 +562,7 @@ fvarnames  <- function(ftovar, Xnames, K, intercept, prefix){
   if(intercept){
     out    <- c("(Intercept)", out)
   }
-  out      <- paste0(prefix, ":", out)
+  out      <- paste0(prefix, ".", out)
 }
 
 # update jumping sclace

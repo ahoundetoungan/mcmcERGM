@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <RcppArmadillo.h>
+#include <RcppEigen.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -236,6 +237,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// frMtoV
+Eigen::VectorXd frMtoV(List& u, const Rcpp::IntegerVector& N, const double& M);
+RcppExport SEXP _mcmcERGM_frMtoV(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List& >::type u(uSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(frMtoV(u, N, M));
+    return rcpp_result_gen;
+END_RCPP
+}
+// frMceiltoV
+Eigen::VectorXd frMceiltoV(List& u, const Rcpp::IntegerVector& N, const double& M);
+RcppExport SEXP _mcmcERGM_frMceiltoV(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List& >::type u(uSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(frMceiltoV(u, N, M));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_propdnorm", (DL_FUNC) &_mcmcERGM_propdnorm, 3},
@@ -251,6 +278,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_fGibbdir2", (DL_FUNC) &_mcmcERGM_fGibbdir2, 16},
     {"_mcmcERGM_fIDsym", (DL_FUNC) &_mcmcERGM_fIDsym, 2},
     {"_mcmcERGM_fIDdir", (DL_FUNC) &_mcmcERGM_fIDdir, 2},
+    {"_mcmcERGM_frMtoV", (DL_FUNC) &_mcmcERGM_frMtoV, 3},
+    {"_mcmcERGM_frMceiltoV", (DL_FUNC) &_mcmcERGM_frMceiltoV, 3},
     {NULL, NULL, 0}
 };
 

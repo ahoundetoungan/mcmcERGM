@@ -17,6 +17,8 @@ simDirNet(
   nblock = 2,
   ncores = 1,
   simunet = 1000,
+  fgraph = NULL,
+  fsubgraph = NULL,
   data = NULL
 )
 }

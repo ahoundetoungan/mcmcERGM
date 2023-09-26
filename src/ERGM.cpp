@@ -119,49 +119,42 @@ arma::cube fdatar(const arma::mat X, List ftovar, const int& nvar, const int& K)
   arma::cube out(n, n, nvar);
   int s(0);
   for(int k(0); k < K; ++ k){
-    arma::vec ftv = ftovar[k];
-    int L         = ftv.n_elem;
+    arma::uvec ftv = ftovar[k];
+    int L          = ftv.n_elem;
     for(int l(0); l < L; ++ l){
-      //
-      if(ftv(l) == 1){ //sum
+      switch(ftv(l)) {
+      case 1: //Xi
         out.slice(s) = fdatai(X.col(k), n);
         ++ s;
-      } 
-      //
-      if(ftv(l) == 2){ //sum
+        break;
+      case 2: //Xj
         out.slice(s) = fdataj(X.col(k), n);
         ++ s;
-      } 
-      //
-      if(ftv(l) == 3){ //sum
+        break;
+      case 3: //Xi + Xj
         out.slice(s) = fdatasum(X.col(k), n);
         ++ s;
-      } 
-      //
-      if(ftv(l) == 4){ //prod
+        break;
+      case 4: //Xi*Xj
         out.slice(s) = fdataprod(X.col(k), n);
         ++ s;
-      } 
-      //
-      if(ftv(l) == 5){ //same
+        break;
+      case 5: //Same
         out.slice(s) = arma::conv_to<arma::mat>::from(fdatasame(X.col(k), n));
         ++ s;
-      } 
-      //
-      if(ftv(l) == 6){ //adiff
+        break;
+      case 6: //Adiff
         out.slice(s) = fdatadiff(X.col(k), n);
         ++ s;
-      } 
-      //
-      if(ftv(l) == 7){ //diff
+        break;
+      case 7: //1{Xi < Xj}
         out.slice(s) = arma::conv_to<arma::mat>::from(fdatalower(X.col(k), n));
         ++ s;
-      } 
-      //
-      if(ftv(l) == 8){ //diff
+        break;
+      case 8: //1{Xi > Xj}
         out.slice(s) = arma::conv_to<arma::mat>::from(fdatagreater(X.col(k), n));
         ++ s;
-      } 
+      }
     }
   }
   return out;
