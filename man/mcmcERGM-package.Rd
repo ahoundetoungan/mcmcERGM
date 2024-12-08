@@ -17,12 +17,6 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Elysée Aristide Houndetoungan \email{ariel92and@gmail.com}
-
-Authors:
-\itemize{
-  \item Yves Zenou \email{yves.zenou@monash.edu}
-  \item Michael Vlassopoulos \email{M.Vlassopoulos@soton.ac.uk}
-}
+\strong{Maintainer}: Elysée Aristide Houndetoungan \email{ahoundetoungan@gmail.com}
 
 }

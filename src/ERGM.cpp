@@ -1,11 +1,22 @@
-// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(RcppArmadillo, RcppDist)]]
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
+#include <wishart.h>
 #define NDEBUG 1
 
 using namespace Rcpp;
 using namespace arma;
 using namespace std;
+
+// this function simulate the inverse Wishart distribution
+//[[Rcpp::export]]
+arma::mat updateOmega(const double& dfa,
+                      const arma::mat& Sca,
+                      const int& M,
+                      const arma::mat& hete) {
+  
+  return riwish(dfa + M, Sca + hete*hete.t());
+}
 
 // this function compute the variable part the dnorm
 //[[Rcpp::export]]
@@ -14,6 +25,14 @@ double propdnorm(const arma::vec& x, const arma::vec& mu, const arma::mat& invV)
   return -0.5*arma::sum(tmp%(invV*tmp));
 }
 
+// when there are many points
+//[[Rcpp::export]]
+arma::rowvec propdnorm_eachm(const arma::mat& x, const arma::mat& V){
+  return -0.5*arma::sum(x%arma::solve(V, x), 0);
+}
+
+
+
 // this function simulate theta prime
 //[[Rcpp::export]]
 arma::vec fsimtheta(const arma::vec& mu, const arma::mat& Sigma, const double& js, const int& npar){
@@ -21,7 +40,13 @@ arma::vec fsimtheta(const arma::vec& mu, const arma::mat& Sigma, const double& j
   return js*arma::chol(Sigma).t()*x + mu;
 }
 
-// this function finds the combination of n entries associated with x
+//[[Rcpp::export]]
+arma::mat fsimhete(const arma::mat& mu, const arma::mat& Sigma, const arma::rowvec& js, const int& khete, const int& M){
+  arma::mat x(khete, M, arma::fill::randn);
+  return arma::chol(Sigma).t()*(x.each_row()%js) + mu;
+}
+
+// this function finds the combinations of n entries associated with x
 // example, if n = 3
 // 1 ---> 0 0 0  
 // 2 ---> 1 0 0
@@ -164,16 +189,18 @@ arma::cube fdatar(const arma::mat X, List ftovar, const int& nvar, const int& K)
 //[[Rcpp::export]]
 arma::mat futility(const arma::cube& X, 
                    const arma::vec& theta,
+                   const double& hetval,
                    const int& npar,
                    const int& n,
-                   const int& intercept){
+                   const bool& intercept){
   arma::mat out(n, n, arma::fill::zeros);
   // cout<<"intercept "<<intercept<<endl;
   for(int k(intercept); k < npar; ++ k){
     // cout<<"k - intercept "<<k - intercept<<endl;
     out += theta(k)*X.slice(k - intercept);
   } 
-  if(intercept == 1){
+  out   += hetval;
+  if(intercept){
     out += theta(0);
   }
   return out;
@@ -496,4 +523,30 @@ List fIDdir(const int& M, const arma::vec& nvec){
     ident[m]  = ide;
   }
   return List::create(Named("idrows") = idrows, Named("idcols") = idcols, Named("ident") = ident);
+}
+
+//[[Rcpp::export]]
+double fupdate_jstheta(const double& jscal, 
+                  const double& accept, 
+                  const int& iteration, 
+                  const double& target, 
+                  const double& kappa, 
+                  const double& jmin, 
+                  const double& jmax){
+  double out(jscal + (accept/iteration - target)/pow(iteration, kappa));
+  if(out < jmin) return jmin;
+  if(out > jmax) return jmax;
+  return out;
+}
+
+//[[Rcpp::export]]
+arma::rowvec fupdate_jshete(const arma::rowvec& jscal, 
+                  const arma::rowvec& accept, 
+                  const int& iteration, 
+                  const double& target, 
+                  const double& kappa, 
+                  const double& jmin, 
+                  const double& jmax){
+  arma::rowvec out(jscal + (accept/iteration - target)/pow(iteration, kappa));
+  return out.clamp(jmin, jmax);
 }

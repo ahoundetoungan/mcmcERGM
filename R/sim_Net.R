@@ -136,8 +136,8 @@ simSymNet <- function(formula.v,
   # Utility
   vv          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
-  vv          <- futil(M, Xv, vv, theta[1:nparv], nparv, nvec, inter.v)
-  uw          <- futil(M, Xw, uw, theta[(nparv + 1):npar], nparw, nvec, inter.w)
+  vv          <- futil(M = M, X = Xv, u = vv, theta = theta[1:nparv], npar = nparv, nvec = nvec, inter = inter.v)
+  uw          <- futil(M = M, X = Xw, u = uw, theta = theta[(nparv + 1):npar], npar = nparw, nvec = nvec, inter = inter.w)
   
   # Simulations
   combr       <- ffindcom(nblock) 

@@ -4,14 +4,14 @@ Version: 0.0.1
 Type: Package
 Title: Using MCMC to simulate the posterior distribution of the parameters of an Exponential Random Graph Models
 Date: 2023-08-01
-Authors@R: c(person("Yves", "Zenou",  role = c("aut"), email =  "yves.zenou@monash.edu"), person("Michael", "Vlassopoulos",  role = c("aut"), email =  "M.Vlassopoulos@soton.ac.uk"), person("Elysée Aristide", "Houndetoungan",  role = c("cre","aut"), email =  "ariel92and@gmail.com"))
+Authors@R: c(person("Elysée Aristide", "Houndetoungan",  role = c("cre","aut"), email =  "ahoundetoungan@gmail.com"))
 Description: Simulates the posterior distribution of the parameters of an Exponential Random Graph Models.
 License: GPL-3
 BugReports: https://github.com/ahoundetoungan/mcmcERGM/issues
 URL: https://github.com/ahoundetoungan/mcmcERGM
 LazyData: true
 Depends: R (>= 3.5.0)
-Imports: Rcpp (>= 1.0.0), Formula, formula.tools, parallel, doParallel, foreach, doRNG, igraph, Matrix
-LinkingTo: Rcpp, RcppArmadillo, RcppEigen
-RoxygenNote: 7.2.3
+Imports: Rcpp (>= 1.0.0), Formula, formula.tools, parallel, doParallel, foreach, doRNG, igraph, Matrix, ddpcr, matrixcalc
+LinkingTo: Rcpp, RcppArmadillo, RcppEigen, RcppDist
+RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)

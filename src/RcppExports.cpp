@@ -12,6 +12,20 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// updateOmega
+arma::mat updateOmega(const double& dfa, const arma::mat& Sca, const int& M, const arma::mat& hete);
+RcppExport SEXP _mcmcERGM_updateOmega(SEXP dfaSEXP, SEXP ScaSEXP, SEXP MSEXP, SEXP heteSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type dfa(dfaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sca(ScaSEXP);
+    Rcpp::traits::input_parameter< const int& >::type M(MSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type hete(heteSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateOmega(dfa, Sca, M, hete));
+    return rcpp_result_gen;
+END_RCPP
+}
 // propdnorm
 double propdnorm(const arma::vec& x, const arma::vec& mu, const arma::mat& invV);
 RcppExport SEXP _mcmcERGM_propdnorm(SEXP xSEXP, SEXP muSEXP, SEXP invVSEXP) {
@@ -22,6 +36,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type mu(muSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type invV(invVSEXP);
     rcpp_result_gen = Rcpp::wrap(propdnorm(x, mu, invV));
+    return rcpp_result_gen;
+END_RCPP
+}
+// propdnorm_eachm
+arma::rowvec propdnorm_eachm(const arma::mat& x, const arma::mat& V);
+RcppExport SEXP _mcmcERGM_propdnorm_eachm(SEXP xSEXP, SEXP VSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    rcpp_result_gen = Rcpp::wrap(propdnorm_eachm(x, V));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -36,6 +62,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const int& >::type npar(nparSEXP);
     rcpp_result_gen = Rcpp::wrap(fsimtheta(mu, Sigma, js, npar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fsimhete
+arma::mat fsimhete(const arma::mat& mu, const arma::mat& Sigma, const arma::rowvec& js, const int& khete, const int& M);
+RcppExport SEXP _mcmcERGM_fsimhete(SEXP muSEXP, SEXP SigmaSEXP, SEXP jsSEXP, SEXP kheteSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type khete(kheteSEXP);
+    Rcpp::traits::input_parameter< const int& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(fsimhete(mu, Sigma, js, khete, M));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -65,17 +106,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // futility
-arma::mat futility(const arma::cube& X, const arma::vec& theta, const int& npar, const int& n, const int& intercept);
-RcppExport SEXP _mcmcERGM_futility(SEXP XSEXP, SEXP thetaSEXP, SEXP nparSEXP, SEXP nSEXP, SEXP interceptSEXP) {
+arma::mat futility(const arma::cube& X, const arma::vec& theta, const double& hetval, const int& npar, const int& n, const bool& intercept);
+RcppExport SEXP _mcmcERGM_futility(SEXP XSEXP, SEXP thetaSEXP, SEXP hetvalSEXP, SEXP nparSEXP, SEXP nSEXP, SEXP interceptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::cube& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type hetval(hetvalSEXP);
     Rcpp::traits::input_parameter< const int& >::type npar(nparSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< const int& >::type intercept(interceptSEXP);
-    rcpp_result_gen = Rcpp::wrap(futility(X, theta, npar, n, intercept));
+    Rcpp::traits::input_parameter< const bool& >::type intercept(interceptSEXP);
+    rcpp_result_gen = Rcpp::wrap(futility(X, theta, hetval, npar, n, intercept));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -237,6 +279,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fupdate_jstheta
+double fupdate_jstheta(const double& jscal, const double& accept, const int& iteration, const double& target, const double& kappa, const double& jmin, const double& jmax);
+RcppExport SEXP _mcmcERGM_fupdate_jstheta(SEXP jscalSEXP, SEXP acceptSEXP, SEXP iterationSEXP, SEXP targetSEXP, SEXP kappaSEXP, SEXP jminSEXP, SEXP jmaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type jscal(jscalSEXP);
+    Rcpp::traits::input_parameter< const double& >::type accept(acceptSEXP);
+    Rcpp::traits::input_parameter< const int& >::type iteration(iterationSEXP);
+    Rcpp::traits::input_parameter< const double& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const double& >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type jmin(jminSEXP);
+    Rcpp::traits::input_parameter< const double& >::type jmax(jmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(fupdate_jstheta(jscal, accept, iteration, target, kappa, jmin, jmax));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fupdate_jshete
+arma::rowvec fupdate_jshete(const arma::rowvec& jscal, const arma::rowvec& accept, const int& iteration, const double& target, const double& kappa, const double& jmin, const double& jmax);
+RcppExport SEXP _mcmcERGM_fupdate_jshete(SEXP jscalSEXP, SEXP acceptSEXP, SEXP iterationSEXP, SEXP targetSEXP, SEXP kappaSEXP, SEXP jminSEXP, SEXP jmaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type jscal(jscalSEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type accept(acceptSEXP);
+    Rcpp::traits::input_parameter< const int& >::type iteration(iterationSEXP);
+    Rcpp::traits::input_parameter< const double& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const double& >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type jmin(jminSEXP);
+    Rcpp::traits::input_parameter< const double& >::type jmax(jmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(fupdate_jshete(jscal, accept, iteration, target, kappa, jmin, jmax));
+    return rcpp_result_gen;
+END_RCPP
+}
 // frMtoV
 Eigen::VectorXd frMtoV(List& u, const Rcpp::IntegerVector& N, const double& M);
 RcppExport SEXP _mcmcERGM_frMtoV(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
@@ -265,11 +341,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_mcmcERGM_updateOmega", (DL_FUNC) &_mcmcERGM_updateOmega, 4},
     {"_mcmcERGM_propdnorm", (DL_FUNC) &_mcmcERGM_propdnorm, 3},
+    {"_mcmcERGM_propdnorm_eachm", (DL_FUNC) &_mcmcERGM_propdnorm_eachm, 2},
     {"_mcmcERGM_fsimtheta", (DL_FUNC) &_mcmcERGM_fsimtheta, 4},
+    {"_mcmcERGM_fsimhete", (DL_FUNC) &_mcmcERGM_fsimhete, 5},
     {"_mcmcERGM_ffindcom", (DL_FUNC) &_mcmcERGM_ffindcom, 1},
     {"_mcmcERGM_fdatar", (DL_FUNC) &_mcmcERGM_fdatar, 4},
-    {"_mcmcERGM_futility", (DL_FUNC) &_mcmcERGM_futility, 5},
+    {"_mcmcERGM_futility", (DL_FUNC) &_mcmcERGM_futility, 6},
     {"_mcmcERGM_fQrsym", (DL_FUNC) &_mcmcERGM_fQrsym, 6},
     {"_mcmcERGM_fQrdir", (DL_FUNC) &_mcmcERGM_fQrdir, 8},
     {"_mcmcERGM_fGibbsym", (DL_FUNC) &_mcmcERGM_fGibbsym, 14},
@@ -278,6 +357,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_fGibbdir2", (DL_FUNC) &_mcmcERGM_fGibbdir2, 16},
     {"_mcmcERGM_fIDsym", (DL_FUNC) &_mcmcERGM_fIDsym, 2},
     {"_mcmcERGM_fIDdir", (DL_FUNC) &_mcmcERGM_fIDdir, 2},
+    {"_mcmcERGM_fupdate_jstheta", (DL_FUNC) &_mcmcERGM_fupdate_jstheta, 7},
+    {"_mcmcERGM_fupdate_jshete", (DL_FUNC) &_mcmcERGM_fupdate_jshete, 7},
     {"_mcmcERGM_frMtoV", (DL_FUNC) &_mcmcERGM_frMtoV, 3},
     {"_mcmcERGM_frMceiltoV", (DL_FUNC) &_mcmcERGM_frMceiltoV, 3},
     {NULL, NULL, 0}
