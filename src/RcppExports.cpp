@@ -51,6 +51,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// propdproposal
+arma::rowvec propdproposal(const arma::mat& x, const arma::mat& V, const arma::rowvec& js);
+RcppExport SEXP _mcmcERGM_propdproposal(SEXP xSEXP, SEXP VSEXP, SEXP jsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type js(jsSEXP);
+    rcpp_result_gen = Rcpp::wrap(propdproposal(x, V, js));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fsimtheta
 arma::vec fsimtheta(const arma::vec& mu, const arma::mat& Sigma, const double& js, const int& npar);
 RcppExport SEXP _mcmcERGM_fsimtheta(SEXP muSEXP, SEXP SigmaSEXP, SEXP jsSEXP, SEXP nparSEXP) {
@@ -122,18 +135,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // fQrsym
-double fQrsym(const arma::mat& ar, const arma::mat& ur, const arma::mat& wr, const int& npu, const int& npw, const int& nr);
-RcppExport SEXP _mcmcERGM_fQrsym(SEXP arSEXP, SEXP urSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP) {
+double fQrsym(const arma::mat& ar, const arma::mat& vr, const arma::mat& wr, const int& npu, const int& npw, const int& nr);
+RcppExport SEXP _mcmcERGM_fQrsym(SEXP arSEXP, SEXP vrSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type vr(vrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
     Rcpp::traits::input_parameter< const int& >::type nr(nrSEXP);
-    rcpp_result_gen = Rcpp::wrap(fQrsym(ar, ur, wr, npu, npw, nr));
+    rcpp_result_gen = Rcpp::wrap(fQrsym(ar, vr, wr, npu, npw, nr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -313,6 +326,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// frecentering
+arma::mat frecentering(arma::vec& theta, const arma::mat& hetval, const arma::uvec intindex);
+RcppExport SEXP _mcmcERGM_frecentering(SEXP thetaSEXP, SEXP hetvalSEXP, SEXP intindexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type hetval(hetvalSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec >::type intindex(intindexSEXP);
+    rcpp_result_gen = Rcpp::wrap(frecentering(theta, hetval, intindex));
+    return rcpp_result_gen;
+END_RCPP
+}
 // frMtoV
 Eigen::VectorXd frMtoV(List& u, const Rcpp::IntegerVector& N, const double& M);
 RcppExport SEXP _mcmcERGM_frMtoV(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
@@ -344,6 +370,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_updateOmega", (DL_FUNC) &_mcmcERGM_updateOmega, 4},
     {"_mcmcERGM_propdnorm", (DL_FUNC) &_mcmcERGM_propdnorm, 3},
     {"_mcmcERGM_propdnorm_eachm", (DL_FUNC) &_mcmcERGM_propdnorm_eachm, 2},
+    {"_mcmcERGM_propdproposal", (DL_FUNC) &_mcmcERGM_propdproposal, 3},
     {"_mcmcERGM_fsimtheta", (DL_FUNC) &_mcmcERGM_fsimtheta, 4},
     {"_mcmcERGM_fsimhete", (DL_FUNC) &_mcmcERGM_fsimhete, 5},
     {"_mcmcERGM_ffindcom", (DL_FUNC) &_mcmcERGM_ffindcom, 1},
@@ -359,6 +386,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_fIDdir", (DL_FUNC) &_mcmcERGM_fIDdir, 2},
     {"_mcmcERGM_fupdate_jstheta", (DL_FUNC) &_mcmcERGM_fupdate_jstheta, 7},
     {"_mcmcERGM_fupdate_jshete", (DL_FUNC) &_mcmcERGM_fupdate_jshete, 7},
+    {"_mcmcERGM_frecentering", (DL_FUNC) &_mcmcERGM_frecentering, 3},
     {"_mcmcERGM_frMtoV", (DL_FUNC) &_mcmcERGM_frMtoV, 3},
     {"_mcmcERGM_frMceiltoV", (DL_FUNC) &_mcmcERGM_frMceiltoV, 3},
     {NULL, NULL, 0}

@@ -14,7 +14,7 @@ arma::mat updateOmega(const double& dfa,
                       const arma::mat& Sca,
                       const int& M,
                       const arma::mat& hete) {
-  
+  // arma::mat tp(hete.each_col() - arma::mean(hete, 1));
   return riwish(dfa + M, Sca + hete*hete.t());
 }
 
@@ -29,6 +29,13 @@ double propdnorm(const arma::vec& x, const arma::vec& mu, const arma::mat& invV)
 //[[Rcpp::export]]
 arma::rowvec propdnorm_eachm(const arma::mat& x, const arma::mat& V){
   return -0.5*arma::sum(x%arma::solve(V, x), 0);
+}
+
+
+// when there are many points with different jumping scale
+//[[Rcpp::export]]
+arma::rowvec propdproposal(const arma::mat& x, const arma::mat& V, const arma::rowvec& js){
+  return -0.5*arma::sum(x%arma::solve(V, x.each_row()%pow(js, 2)), 0);
 }
 
 
@@ -209,7 +216,7 @@ arma::mat futility(const arma::cube& X,
 // this function computes the potential function for the case of symmetric networks
 //[[Rcpp::export]]
 double fQrsym(const arma::mat& ar, 
-              const arma::mat& ur, 
+              const arma::mat& vr, 
               const arma::mat& wr, 
               const int& npu,
               const int& npw,
@@ -226,7 +233,7 @@ double fQrsym(const arma::mat& ar,
   }
   
   if(npu > 0){
-    out       += arma::accu(ar%ur);
+    out       += arma::accu(ar%vr);
   }
   
   return out;
@@ -525,6 +532,7 @@ List fIDdir(const int& M, const arma::vec& nvec){
   return List::create(Named("idrows") = idrows, Named("idcols") = idcols, Named("ident") = ident);
 }
 
+// This function updates jumping scales
 //[[Rcpp::export]]
 double fupdate_jstheta(const double& jscal, 
                   const double& accept, 
@@ -549,4 +557,14 @@ arma::rowvec fupdate_jshete(const arma::rowvec& jscal,
                   const double& jmax){
   arma::rowvec out(jscal + (accept/iteration - target)/pow(iteration, kappa));
   return out.clamp(jmin, jmax);
+}
+
+// this function recenters heterogeneity to ensure identification
+//[[Rcpp::export]]
+arma::mat frecentering(arma::vec& theta,
+                       const arma::mat& hetval,
+                       const arma::uvec intindex) {
+  arma::vec tp(arma::mean(hetval, 1));
+  theta.elem(intindex) += tp;
+  return hetval.each_col() - tp;
 }

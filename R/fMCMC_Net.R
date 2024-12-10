@@ -69,7 +69,7 @@ mcmcSymNet <- function(network,
     if(length(f_to_var.v) != Kv) stop("length(f_to_var.v) does not match with formula.v")
     nvaru     <- length(unlist(f_to_var.v))
     Xv        <- lapply(1:M, function(m) Xv[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
-    vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "D")
+    vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "M")
   }
   if(!missing(formula.w)){
     Xw        <- formula.to.data(formula.w, data)
@@ -108,7 +108,7 @@ mcmcSymNet <- function(network,
   in.nu       <- FALSE
   if (!missing(heterogeneity)){
     stopifnot(inherits(heterogeneity, "list"))
-    if (!all(tolower(names(heterogeneity)) %in% c("mu", "nu"))) stop("`heterogeneity` must be a list of `mu` and `nu`.")
+    if (!all(tolower(names(heterogeneity)) %in% c("mu", "nu"))) stop("'heterogeneity' must be a list containing only 'mu' and 'nu'")
     names(heterogeneity) <- tolower(names(heterogeneity))
     in.mu <- !is.null(heterogeneity$mu)
     in.nu <- !is.null(heterogeneity$nu)
@@ -124,23 +124,29 @@ mcmcSymNet <- function(network,
     if (length(mu) == 1) {
       mu  <- rep(mu, M)
     } else if (length(mu) != M) {
-      stop("`mu` must be either a scalar or an M-dimensional vector")
+      stop("'mu' must be either a scalar or a vector of length M")
     }
     if (length(nu) == 1) {
       nu  <- rep(nu, M)
     } else if (length(nu) != M) {
-      stop("`nu` must be either a scalar or an M-dimensional vector")
+      stop("'nu' must be either a scalar or a vector of length M")
     }
   } 
   khete       <- in.mu + in.nu
   hetval      <- t(cbind(mu, nu))
+  if (in.mu && nparv == 0) {
+    stop("'mu' heterogeneity cannot be estimated if 'formula.v' is not defined")
+  }
+  if (in.nu && nparw == 0) {
+    stop("'nu' heterogeneity cannot be estimated if 'formula.w' is not defined")
+  }
   
   # starting
   if(is.null(starting)){
     starting  <- rep(0, npar)
   } else{
     if(length(starting) != npar){
-      stop("length(starting) not equal to the number of parameters to be estimated")
+      stop("The length of 'starting' must match the number of parameters to be estimated")
     }
   }
   theta       <- starting
@@ -152,30 +158,45 @@ mcmcSymNet <- function(network,
   jmax        <- mcmc.ctr$jmax
   
   if(is.null(target)){
-    target    <- ifelse(npar == 1, 0.44, 
-                        ifelse(npar == 2, 0.35, 
-                               ifelse(npar == 3, 0.3125, 
-                                      ifelse(npar == 4, 0.275, 
-                                             ifelse(npar == 5, 0.25, 0.234)))))
+    target    <- ifelse((npar + khete*M) == 1, 0.44, 
+                        ifelse((npar + khete*M) == 2, 0.35, 
+                               ifelse((npar + khete*M) == 3, 0.3125, 
+                                      ifelse((npar + khete*M) == 4, 0.275, 
+                                             ifelse((npar + khete*M) == 5, 0.25, 0.234)))))
   }
   if(is.null(kappa)){
     kappa     <- 0.6
   }
   if(is.null(jmin)){
-    jmin      <- 1e-6
+    jmin      <- rep(1e-6, 1 + het)
+  }
+  if(length(jmin) == 1){
+    jmin      <- rep(jmin, 1 + het)
   }
   if(is.null(jmax)){
-    jmax      <- 3
+    jmax      <- rep(3, 1 + het)
   }
-  
-  # prior
+  if(length(jmax) == 1){
+    jmax      <- rep(jmax, 1 + het)
+  }
+  if (het) {
+    if(length(jmin) != 2 | length(jmax) != 2) {
+      stop("The minimal and the maximal jumping scales are either scalars (if there is no heterogeneity) or a 2 dimentional vector (if there is heterogeneity)")
+    }
+  } else {
+    if(length(jmin) != 1 | length(jmax) != 1) {
+      stop("The minimal and the maximal jumping scales are either scalars (if there is no heterogeneity) or a 2 dimentional vector (if there is heterogeneity)")
+    }
+  }
+
+  # theta
   # expectation
   Etheta      <- prior$Etheta 
   if(is.null(Etheta)){
     Etheta    <- rep(0, npar)
   } else{
     if(length(Etheta) != npar){
-      stop("length(Etheta) not equal to the number of parameters to be estimated")
+      stop("The length of 'Etheta' must match the number of parameters to be estimated")
     }
   }
   
@@ -186,76 +207,82 @@ mcmcSymNet <- function(network,
   } else{
     if(length(invVtheta) == 1){invVtheta <- diag(npar)*c(invVtheta)}
     if((nrow(invVtheta) != npar) | (ncol(invVtheta) != npar)){
-      stop("dim(invVtheta) does not match to the number of parameters to be estimated")
+      stop("The dimensions of 'invVtheta' must match the number of parameters to be estimated")
     }
   }
   
-  # Variance of het
-  Omega       <- NULL
-  if (het) {
-    Omega     <- as.matrix(cov(t(hetval[c(in.mu, in.nu), , drop = FALSE]))) 
-    if (is.singular.matrix(Omega)) {
-      Omega   <- diag(khete)
-    }
-  }
-  
-  # degree of freedoms Omega
-  scOmega     <- prior$scOmega
-  if(is.null(scOmega)){
-    scOmega   <- matrix(0, khete, khete)
-  } else{
-    if(length(scOmega) == 1){scOmega <- diag(khete)*c(scOmega)}
-    if((nrow(scOmega) != khete) | (ncol(scOmega) != khete)){
-      stop("dim(scOmega) does not match to the number of heterogeneity parameters")
-    }
-  }
-  
-  # scale Omega
-  dfOmega     <- prior$dfOmega
-  if(is.null(dfOmega)){
-    dfOmega   <- khete
-  } else{
-    if(dfOmega <= 0){
-      stop("Negative degree of freedom")
-    }
-  }
-  
-  ### Variance of proposal
-  #theta
+  # Variance of proposal
   if(is.null(Sigmatheta)){
     Sigmatheta  <- diag(npar)
   } else{
     if(length(Sigmatheta) == 1){Sigmatheta <- diag(npar)*c(Sigmatheta)}
     if((nrow(Sigmatheta) != npar) | (ncol(Sigmatheta) != npar)){
-      stop("dim(Sigmatheta) does not match to the number of parameters to be estimated")
+      stop("The dimensions of 'Sigmatheta' must match the number of parameters to be estimated")
     }
   }
   
-  #heterogeneity
-  if(is.null(Sigmahete)){
-    Sigmahete   <- diag(khete)
-  } else{
-    if(length(Sigmahete) == 1){Sigmahete <- diag(khete)*c(Sigmahete)}
-    if((nrow(Sigmahete) != khete) | (ncol(Sigmahete) != khete)){
-      stop("dim(Sigmahete) does not match to the number of heterogeneity parameters")
+  # heterogeneity
+  Omega       <- NULL
+  scOmega     <- prior$scOmega
+  dfOmega     <- prior$dfOmega
+  in.het      <- c(in.mu, in.nu)
+  int.upd     <- NULL
+  if (het) {
+    int.upd   <- which(c(vname.v, vname.w) %in% c("M.(Intercept)", "I.(Intercept)")[in.het]) - 1
+    if (length(int.upd) > 0){
+      hetval[in.het,]  <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
+    }
+    # variance
+    Omega     <- cov(t(hetval[in.het, , drop = FALSE])) 
+    if (is.singular.matrix(Omega)) {
+      Omega   <- diag(khete)
+    }
+    
+    # Scale parameter Omega
+    if(is.null(scOmega)){
+      scOmega <- matrix(0, khete, khete)
+    } else{
+      if(length(scOmega) == 1){scOmega <- diag(khete)*c(scOmega)}
+      if((nrow(scOmega) != khete) | (ncol(scOmega) != khete)){
+        stop("The dimensions of 'scOmega' must match the number of heterogeneity parameters")
+      }
+    }
+    
+    # df of Omega
+    if(is.null(dfOmega)){
+      dfOmega <- khete
+    } else{
+      if(dfOmega <= 0){
+        stop("Negative degree of freedom")
+      }
+    }
+    
+    #  Variance of proposal
+    if(is.null(Sigmahete)){
+      Sigmahete   <- diag(khete)
+    } else{
+      if(length(Sigmahete) == 1){Sigmahete <- diag(khete)*c(Sigmahete)}
+      if((nrow(Sigmahete) != khete) | (ncol(Sigmahete) != khete)){
+        stop("The dimensions of 'Sigmahete' dmust match the number of heterogeneity parameters")
+      }
     }
   }
   
   # Utility
-  uu          <- rep(list(matrix(0, 1, 1)), times = M)
+  uv          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
-  uu          <- futil(M, Xv, uu, theta[1:nparv], hetval[1,], nparv, nvec, inter.v)
+  uv          <- futil(M, Xv, uv, theta[1:nparv], hetval[1,], nparv, nvec, inter.v)
   uw          <- futil(M, Xw, uw, theta[(nparv + 1):npar], hetval[2,], nparw, nvec, inter.w)
   
   # The potential function value at the starting point
-  pot_ath     <- fpotensym_eachm(M, network, uu, uw, nparv, nparw, nvec)
+  pot_ath     <- fpotensym_eachm(M, network, uv, uw, nparv, nparw, nvec)
   
   # MCMC
   jstheta     <- 1  #jumping scale for the adaptive MCMC
   jshete      <- rep(1, M)
   atheta      <- 0  #number of times the draw is accepted
   ahete       <- rep(0, M)
-  uup         <- uu
+  uvp         <- uv
   uwp         <- uw
   combr       <- ffindcom(nblock) 
   ncombr      <- 2^nblock
@@ -274,14 +301,8 @@ mcmcSymNet <- function(network,
   if (het) {
     simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
     simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
-    nacol     <- c()
-    if (in.mu) {
-      nacol   <- "mu"
-    }
-    if (in.nu) {
-      nacol   <- c(nacol, "nu")
-    }
-    colnames(simhete)  <- paste0(rep(nacol, M), rep(1:M, each = 2))
+    nacol     <- c("mu", "nu")[in.het] 
+    colnames(simhete)  <- paste0(rep(nacol, M), rep(1:M, each = khete))
     colnames(simOmega) <- paste0("s_", sapply(nacol, function(s1) sapply(nacol, function(s2) paste0(s1, s2))))
     colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
   } 
@@ -289,13 +310,13 @@ mcmcSymNet <- function(network,
   
   for (s in 1:simutheta) {
     # simulate theta prime
-    cat("********************* iteration: ", s, "/", simutheta, "\n", sep = "")
+    cat("********************* Iteration: ", s, "/", simutheta, "\n", sep = "")
     cat("Updating theta\n")
-    if(in.mu){
-      cat("direct links\n")
+    if(nparv > 0){
+      cat("mutual links\n")
       cat(head(theta, nparv), "\n")
     }
-    if(in.nu){
+    if(nparw > 0){
       cat("indirect links\n")
       cat(tail(theta, nparw), "\n")
     }
@@ -303,27 +324,27 @@ mcmcSymNet <- function(network,
     thetap    <- fsimtheta(theta, Sigmatheta, jstheta, npar)  #**
     
     # utility at thetap
-    uup       <- futil(M, Xv, uup, thetap[1:nparv], hetval[1,], nparv, nvec, inter.v) #**
+    uvp       <- futil(M, Xv, uvp, thetap[1:nparv], hetval[1,], nparv, nvec, inter.v) #**
     uwp       <- futil(M, Xw, uwp, thetap[(nparv + 1):npar], hetval[2,], nparw, nvec, inter.w) #**
     
     # potential function at a (ie, network) and thetap
-    pot_athp  <- fpotensym_eachm(M, network, uup, uwp, nparv, nparw, nvec) #**
+    pot_athp  <- fpotensym_eachm(M, network, uvp, uwp, nparv, nparw, nvec) #**
     
     # Gibbs to simulate ap
     networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
       fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
-               uup[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
+               uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
     cat("Gibbs executed\n")
     
     # potential function at ap 
-    pot_apth  <- fpotensym_eachm(M, networkp, uu, uw, nparv, nparw, nvec)
-    pot_apthp <- fpotensym_eachm(M, networkp, uup, uwp, nparv, nparw, nvec)
+    pot_apth  <- fpotensym_eachm(M, networkp, uv, uw, nparv, nparw, nvec)
+    pot_apthp <- fpotensym_eachm(M, networkp, uvp, uwp, nparv, nparw, nvec)
     
     # acceptance rate of theta
     lalpha      <- sum(pot_apth - pot_ath + pot_athp - pot_apthp)  + propdnorm(thetap, Etheta, invVtheta) - propdnorm(theta, Etheta, invVtheta) 
     if(runif(1) < exp(lalpha)){
       theta   <- thetap
-      uu      <- uup
+      uv      <- uvp
       uw      <- uwp
       pot_ath <- pot_athp
       atheta  <- atheta + 1
@@ -331,42 +352,43 @@ mcmcSymNet <- function(network,
     } else{
       cat("Simulated theta rejected -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
     }
-    jstheta       <- fupdate_jstheta(jstheta, atheta, s, target, kappa, jmin, jmax)
-    posterior[s,] <- c(theta)
-    sJS[s, 1]     <- jstheta
-      
+    jstheta       <- fupdate_jstheta(jstheta, atheta, s, target, kappa, jmin[1], jmax[1])
+    
     # Update heterogeneity (if any)
     if (het) {
       cat("\nUpdating heterogeneity\n")
-      hetvalp[c(in.mu, in.nu),] <- fsimhete(hetval[c(in.mu, in.nu), , drop = FALSE], Sigmahete, jshete, khete, M)
-
+      hetvalp[in.het,] <- fsimhete(hetval[in.het, , drop = FALSE], Sigmahete, jshete, khete, M)
+      
       # utility at hetep
       if (in.mu) {
-        uup     <- futil(M, Xv, uup, theta[1:nparv], hetvalp[1,], nparv, nvec, inter.v) #**
+        uvp     <- futil(M, Xv, uvp, theta[1:nparv], hetvalp[1,], nparv, nvec, inter.v) #**
       }
       if (in.nu) {
         uwp     <- futil(M, Xw, uwp, theta[(nparv + 1):npar], hetvalp[2,], nparw, nvec, inter.w) #**
       }
       
       # potential function at a (ie, network) and hetep
-      pot_athp  <- fpotensym_eachm(M, network, uup, uwp, nparv, nparw, nvec) #**
+      pot_athp  <- fpotensym_eachm(M, network, uvp, uwp, nparv, nparw, nvec) #**
       
       # Gibbs to simulate ap
       networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
         fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
-                 uup[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
+                 uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
       cat("Gibbs executed\n")
       
       # potential function at ap 
-      pot_apth  <- fpotensym_eachm(M, networkp, uu, uw, nparv, nparw, nvec)
-      pot_apthp <- fpotensym_eachm(M, networkp, uup, uwp, nparv, nparw, nvec)
+      pot_apth  <- fpotensym_eachm(M, networkp, uv, uw, nparv, nparw, nvec)
+      pot_apthp <- fpotensym_eachm(M, networkp, uvp, uwp, nparv, nparw, nvec)
       
       # acceptance rate of theta
-      lalpha      <- pot_apth - pot_ath + pot_athp - pot_apthp + propdnorm_eachm(hetvalp[c(in.mu, in.nu), , drop = FALSE], Omega) - propdnorm_eachm(hetval[c(in.mu, in.nu), , drop = FALSE], Omega)
+      lalpha      <- pot_apth - pot_ath + pot_athp - pot_apthp + propdnorm_eachm(hetvalp[in.het, , drop = FALSE], Omega) - propdnorm_eachm(hetval[in.het, , drop = FALSE], Omega)
       tp          <- runif(M) < exp(lalpha)
       hetval[,tp] <- hetvalp[,tp]
+      if (length(int.upd) > 0){
+        hetval[in.het,] <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
+      }
       if (in.mu) {
-        uu[tp]    <- uup[tp]
+        uv[tp]    <- uvp[tp]
       }
       if (in.nu) {
         uw[tp]    <- uwp[tp]
@@ -377,14 +399,16 @@ mcmcSymNet <- function(network,
       tp          <- 100*ahete/s
       cat("Acceptance rate\n min: ", round(min(tp), 1), "% -- median: ", round(median(tp), 1), "% -- max: ",  round(max(tp), 1), 
           "%\n", sep = "")
-      jshete      <- fupdate_jshete(jshete, ahete, s, target, kappa, jmin, jmax)
-      simhete[s,] <- c(hetval[c(in.mu, in.nu), , drop = FALSE])
+      jshete      <- fupdate_jshete(jshete, ahete, s, target, kappa, jmin[2], jmax[2])
+      simhete[s,] <- c(hetval[in.het, , drop = FALSE])
       sJS[s, 2:(M + 1)] <- jshete
       
       # Update Omega
-      Omega        <- updateOmega(dfOmega, scOmega, M, hetval[c(in.mu, in.nu), , drop = FALSE])
+      Omega        <- updateOmega(dfOmega, scOmega, M, hetval[in.het, , drop = FALSE])
       simOmega[s,] <- c(Omega)
     }
+    posterior[s,] <- c(theta)
+    sJS[s, 1]     <- jstheta
     spot[s]       <- sum(pot_ath)
     cat("potential: ", spot[s], "\n\n", sep = "")
   }
@@ -406,13 +430,8 @@ mcmcSymNet <- function(network,
 }
 
 
+
 #' @title Simulate the posterior distribution of the parameters of an exponential random symmetric graph model
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom foreach foreach "%dopar%"
-#' @importFrom doRNG "%dorng%"
-#' @importFrom doParallel registerDoParallel
-#' @importFrom ddpcr quiet
-#' @importFrom utils head tail
 #' @export
 mcmcDirNet <- function(network, 
                        formula.u, 
@@ -421,39 +440,55 @@ mcmcDirNet <- function(network,
                        f_to_var.u, 
                        f_to_var.v,
                        f_to_var.w,
+                       heterogeneity,
                        starting    = NULL,
                        nblock      = 2,
                        ncores      = 1, 
-                       Etheta      = NULL,
-                       invVtheta   = NULL,
-                       Sigma       = NULL, 
+                       prior       = list(),
+                       Sigmatheta  = NULL,
+                       Sigmahete   = NULL,
                        simutheta   = 1e3,
                        simunet     = 1e3,
                        mcmc.ctr    = list(target  = NULL, kappa = 0.6, jmin = 1e-6, jmax = 3), 
                        data        = NULL){
   stopifnot(is.list(network))
-  if(missing(formula.u) & missing(formula.v) & missing(formula.w)){
-    stop("formula.u, formula.v, and formula.w cannot be missing")
+  
+  if (missing(formula.u) && missing(formula.v) && missing(formula.w)) {
+    stop("formula.u, formula.v, and formula.w cannot all be missing")
   }
   
-  if(missing(formula.u)){
-    if(!missing(f_to_var.u)){stop("f_to_var.u is defined without formula.u")}
-  } else{
-    if(missing(f_to_var.u)){stop("formula.u is defined without f_to_var.u")}
+  if (missing(formula.u)) {
+    if (!missing(f_to_var.u)) {
+      stop("f_to_var.u is defined without formula.u")
+    }
+  } else {
+    if (missing(f_to_var.u)) {
+      stop("formula.u is defined without f_to_var.u")
+    }
     stopifnot(tolower(unlist(f_to_var.u)) %in% c("i", "j", "sum", "prod", "same", "adiff", "lower", "greater"))
-    f_to_var.u  <- ff_to_var(f_to_var.u)
+    f_to_var.u <- ff_to_var(f_to_var.u)
   }
-  if(missing(formula.v)){
-    if(!missing(f_to_var.v)){stop("f_to_var.v is defined without formula.u")}
-  } else{
-    if(missing(f_to_var.v)){stop("formula.v is defined without f_to_var.v")}
+  
+  if (missing(formula.v)) {
+    if (!missing(f_to_var.v)) {
+      stop("f_to_var.v is defined without formula.v")
+    }
+  } else {
+    if (missing(f_to_var.v)) {
+      stop("formula.v is defined without f_to_var.v")
+    }
     stopifnot(tolower(unlist(f_to_var.v)) %in% c("sum", "prod", "same", "adiff"))
-    f_to_var.v  <- ff_to_var(f_to_var.v)
+    f_to_var.v <- ff_to_var(f_to_var.v)
   }
-  if(missing(formula.w)){
-    if(!missing(f_to_var.w)){stop("f_to_var.w is defined without formula.w")}
-  } else{
-    if(missing(f_to_var.w)){stop("formula.w is defined without f_to_var.w")}
+  
+  if (missing(formula.w)) {
+    if (!missing(f_to_var.w)) {
+      stop("f_to_var.w is defined without formula.w")
+    }
+  } else {
+    if (missing(f_to_var.w)) {
+      stop("formula.w is defined without f_to_var.w")
+    }
     stopifnot(tolower(unlist(f_to_var.w)) %in% c("sum", "prod", "same", "adiff"))
     f_to_var.w  <- ff_to_var(f_to_var.w)
   }
@@ -487,7 +522,7 @@ mcmcDirNet <- function(network,
     name.u    <- Xu$names
     Xu        <- Xu$X
     Ku        <- ncol(Xu)
-    if(length(f_to_var.u) != Ku) stop("length(f_to_var.u) does not match with formula.u")
+    if(length(f_to_var.u) != Ku) stop("The length of f_to_var.u does not match formula.u")
     nvaru     <- length(unlist(f_to_var.u))
     Xu        <- lapply(1:M, function(m) Xu[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.u   <- fvarnames(f_to_var.u, name.u, Ku, inter.u, "D")
@@ -498,7 +533,7 @@ mcmcDirNet <- function(network,
     name.v    <- Xv$names
     Xv        <- Xv$X
     Kv        <- ncol(Xv)
-    if(length(f_to_var.v) != Kv) stop("length(f_to_var.v) does not match with formula.v")
+    if(length(f_to_var.v) != Kv) stop("The length of f_to_var.v does not match formula.v")
     nvarv     <- length(unlist(f_to_var.v))
     Xv        <- lapply(1:M, function(m) Xv[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "M")
@@ -509,7 +544,7 @@ mcmcDirNet <- function(network,
     name.w    <- Xw$names
     Xw        <- Xw$X
     Kw        <- ncol(Xw)
-    if(length(f_to_var.w) != Kw) stop("length(f_to_var.w) does not match with formula.w")
+    if(length(f_to_var.w) != Kw) stop("The length of f_to_var.w does not match formula.w")
     nvarw     <- length(unlist(f_to_var.w))
     Xw        <- lapply(1:M, function(m) Xw[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.w   <- fvarnames(f_to_var.w, name.w, Kw, inter.w, "I")
@@ -536,12 +571,67 @@ mcmcDirNet <- function(network,
   nparw       <- length(vname.w)
   npar        <- nparu + nparv + nparw
   
+  # mu, nu, zeta
+  het         <- FALSE
+  ze          <- rep(0, M)
+  mu          <- rep(0, M)
+  nu          <- rep(0, M)
+  in.ze       <- FALSE #Tells if ze should be inferred
+  in.mu       <- FALSE 
+  in.nu       <- FALSE
+  if (!missing(heterogeneity)){
+    stopifnot(inherits(heterogeneity, "list"))
+    if (!all(tolower(names(heterogeneity)) %in% c("mu", "nu", "zeta"))) stop("'heterogeneity' must be a list containing only 'zeta', 'mu', and 'nu'")
+    names(heterogeneity) <- tolower(names(heterogeneity))
+    in.ze <- !is.null(heterogeneity$zeta)
+    in.mu <- !is.null(heterogeneity$mu)
+    in.nu <- !is.null(heterogeneity$nu)
+    if (in.ze) {
+      ze  <- heterogeneity$zeta
+    }
+    if (in.mu) {
+      mu  <- heterogeneity$mu
+    }
+    if (in.nu) {
+      nu  <- heterogeneity$nu
+    }
+    het   <- in.mu | in.nu | in.ze
+  }
+  if (het) {
+    if (length(ze) == 1) {
+      ze  <- rep(mu, M)
+    } else if (length(ze) != M) {
+      stop("'zeta' must be either a scalar or a vector of length M")
+    }
+    if (length(mu) == 1) {
+      mu  <- rep(mu, M)
+    } else if (length(mu) != M) {
+      stop("'mu' must be either a scalar or a vector of length M")
+    }
+    if (length(nu) == 1) {
+      nu  <- rep(nu, M)
+    } else if (length(nu) != M) {
+      stop("'nu' must be either a scalar or a vector of length M")
+    }
+  } 
+  khete       <- in.ze + in.mu + in.nu
+  hetval      <- t(cbind(ze, mu, nu))
+  if (in.ze && nparu == 0) {
+    stop("'zeta' heterogeneity cannot be estimated if 'formula.u' is not defined")
+  }
+  if (in.mu && nparv == 0) {
+    stop("'mu' heterogeneity cannot be estimated if 'formula.v' is not defined")
+  }
+  if (in.nu && nparw == 0) {
+    stop("'nu' heterogeneity cannot be estimated if 'formula.w' is not defined")
+  }
+  
   # starting
   if(is.null(starting)){
     starting  <- rep(0, npar)
   } else{
     if(length(starting) != npar){
-      stop("length(starting) not equal to the number of parameters to be estimated")
+      stop("The length of 'starting' must match the number of parameters to be estimated")
     }
   }
   theta       <- starting
@@ -553,48 +643,113 @@ mcmcDirNet <- function(network,
   jmax        <- mcmc.ctr$jmax
   
   if(is.null(target)){
-    target    <- ifelse(npar == 1, 0.44, 
-                        ifelse(npar == 2, 0.35, 
-                               ifelse(npar == 3, 0.3125, 
-                                      ifelse(npar == 4, 0.275, 
-                                             ifelse(npar == 5, 0.25, 0.234)))))
+    target    <- ifelse((npar + khete*M) == 1, 0.44, 
+                        ifelse((npar + khete*M) == 2, 0.35, 
+                               ifelse((npar + khete*M) == 3, 0.3125, 
+                                      ifelse((npar + khete*M) == 4, 0.275, 
+                                             ifelse((npar + khete*M) == 5, 0.25, 0.234)))))
   }
   if(is.null(kappa)){
     kappa     <- 0.6
   }
   if(is.null(jmin)){
-    jmin      <- 1e-6
+    jmin      <- rep(1e-6, 1 + het)
+  }
+  if(length(jmin) == 1){
+    jmin      <- rep(jmin, 1 + het)
   }
   if(is.null(jmax)){
-    jmax      <- 3
+    jmax      <- rep(3, 1 + het)
+  }
+  if(length(jmax) == 1){
+    jmax      <- rep(jmax, 1 + het)
+  }
+  if (het) {
+    if(length(jmin) != 2 | length(jmax) != 2) {
+      stop("The minimal and the maximal jumping scales are either scalars (if there is no heterogeneity) or a 2 dimentional vector (if there is heterogeneity)")
+    }
+  } else {
+    if(length(jmin) != 1 | length(jmax) != 1) {
+      stop("The minimal and the maximal jumping scales are either scalars (if there is no heterogeneity) or a 2 dimentional vector (if there is heterogeneity)")
+    }
   }
   
-  # prior
+  # theta
   # expectation
+  Etheta      <- prior$Etheta 
   if(is.null(Etheta)){
     Etheta    <- rep(0, npar)
   } else{
     if(length(Etheta) != npar){
-      stop("length(Etheta) not equal to the number of parameters to be estimated")
-    }
-  }
-  # inverse of the variance
-  if(is.null(invVtheta)){
-    invVtheta <- matrix(1/100, npar, npar)
-  } else{
-    if(length(invVtheta) == 1){invVtheta <- diag(npar)*c(invVtheta)}
-    if((nrow(invVtheta) != npar) | (ncol(invVtheta) != npar)){
-      stop("dim(invVtheta) does not match to the number of parameters to be estimated")
+      stop("The length of 'Etheta' must match the number of parameters to be estimated")
     }
   }
   
-  #Sigma
-  if(is.null(Sigma)){
-    Sigma     <- diag(npar)
+  # inverse of the variance
+  invVtheta   <- prior$invVtheta
+  if(is.null(invVtheta)){
+    invVtheta <- matrix(0, npar, npar)
   } else{
-    if(length(Sigma) == 1){Sigma <- diag(npar)*c(Sigma)}
-    if((nrow(Sigma) != npar) | (ncol(Sigma) != npar)){
-      stop("dim(Sigma) does not match to the number of parameters to be estimated")
+    if(length(invVtheta) == 1){invVtheta <- diag(npar)*c(invVtheta)}
+    if((nrow(invVtheta) != npar) | (ncol(invVtheta) != npar)){
+      stop("The dimensions of 'invVtheta' must match the number of parameters to be estimated")
+    }
+  }
+  
+  # Variance of proposal
+  if(is.null(Sigmatheta)){
+    Sigmatheta  <- diag(npar)
+  } else{
+    if(length(Sigmatheta) == 1){Sigmatheta <- diag(npar)*c(Sigmatheta)}
+    if((nrow(Sigmatheta) != npar) | (ncol(Sigmatheta) != npar)){
+      stop("The dimensions of 'Sigmatheta' must match the number of parameters to be estimated")
+    }
+  }
+  
+  # heterogeneity
+  Omega       <- NULL
+  scOmega     <- prior$scOmega
+  dfOmega     <- prior$dfOmega
+  in.het      <- c(in.ze, in.mu, in.nu)
+  int.upd     <- NULL
+  if (het) {
+    int.upd   <- which(c(vname.u, vname.v, vname.w) %in% c("D.(Intercept)", "M.(Intercept)", "I.(Intercept)")[in.het]) - 1
+    if (length(int.upd) > 0){
+      hetval[in.het,]  <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
+    }
+    # variance
+    Omega     <- cov(t(hetval[in.het, , drop = FALSE])) 
+    if (is.singular.matrix(Omega)) {
+      Omega   <- diag(khete)
+    }
+    
+    # Scale parameter Omega
+    if (is.null(scOmega)) {
+      scOmega   <- matrix(0, khete, khete)
+    } else{
+      if(length(scOmega) == 1){scOmega <- diag(khete)*c(scOmega)}
+      if((nrow(scOmega) != khete) | (ncol(scOmega) != khete)){
+        stop("The dimensions of 'scOmega' must match the number of heterogeneity parameters")
+      }
+    }
+    
+    # df of Omega
+    if(is.null(dfOmega)){
+      dfOmega   <- khete
+    } else{
+      if(dfOmega <= 0){
+        stop("Negative degree of freedom")
+      }
+    }
+    
+    #  Variance of proposal
+    if(is.null(Sigmahete)){
+      Sigmahete   <- diag(khete)
+    } else{
+      if(length(Sigmahete) == 1){Sigmahete <- diag(khete)*c(Sigmahete)}
+      if((nrow(Sigmahete) != khete) | (ncol(Sigmahete) != khete)){
+        stop("The dimensions of 'Sigmahete' dmust match the number of heterogeneity parameters")
+      }
     }
   }
   
@@ -602,16 +757,18 @@ mcmcDirNet <- function(network,
   uu          <- rep(list(matrix(0, 1, 1)), times = M)
   uv          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
-  uu          <- futil(M, Xu, uu, theta[1:nparu], nparu, nvec, inter.u)
-  uv          <- futil(M, Xv, uv, theta[(nparu + 1):(nparu + nparv)], nparv, nvec, inter.v)
-  uw          <- futil(M, Xw, uw, theta[(nparu + nparv + 1):npar], nparw, nvec, inter.w)
+  uu          <- futil(M, Xu, uu, head(theta, nparu), hetval[1,], nparu, nvec, inter.u)
+  uv          <- futil(M, Xv, uv, theta[(nparu + 1):(nparu + nparv)], hetval[2,], nparv, nvec, inter.v)
+  uw          <- futil(M, Xw, uw, tail(theta, nparw), hetval[3,], nparw, nvec, inter.w)
   
   # The potential function value at the starting point
-  pot_ath     <- fpotendir(M, network, uu, uv, uw, nparu, nparv, nparw, nvec)
+  pot_ath     <- fpotendir_eachm(M, network, uu, uv, uw, nparu, nparv, nparw, nvec)
   
   # MCMC
   jstheta     <- 1  #jumping scale for the adaptive MCMC
+  jshete      <- rep(1, M)
   atheta      <- 0  #number of times the draw is accepted
+  ahete       <- rep(0, M)
   uup         <- uu
   uvp         <- uv
   uwp         <- uw
@@ -625,10 +782,24 @@ mcmcDirNet <- function(network,
   quiet(gc())
   
   posterior   <- as.data.frame(matrix(0, simutheta, npar)); colnames(posterior) <- c(vname.u, vname.v, vname.w)
+  simhete     <- NULL
+  simOmega    <- NULL
   spot        <- c()
+  sJS         <- as.data.frame(matrix(0, simutheta, 1 + het*M)) 
+  if (het) {
+    simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
+    simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
+    nacol     <- c("zeta", "mu", "nu")[in.het] 
+    colnames(simhete)  <- paste0(rep(nacol, M), rep(1:M, each = khete))
+    colnames(simOmega) <- paste0("s_", sapply(nacol, function(s1) sapply(nacol, function(s2) paste0(s1, s2))))
+    colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
+  } 
+  hetvalp     <- hetval
+  
   for (s in 1:simutheta) {
     # simulate theta prime
-    cat("********************* iteration: ", s, "/", simutheta, "\n", sep = "")
+    cat("********************* Iteration: ", s, "/", simutheta, "\n", sep = "")
+    cat("Updating theta\n")
     if(nparu > 0){
       cat("direct links\n")
       cat(head(theta, nparu), "\n")
@@ -641,21 +812,17 @@ mcmcDirNet <- function(network,
       cat("indirect links\n")
       cat(tail(theta, nparw), "\n")
     }
-    cat("potential\n")
-    cat(pot_ath, "\n")
     
-    thetap    <- fsimtheta(theta, Sigma, jstheta, npar)  #**
-    # cat("thetap", thetap, "\n")
-    # cat("sum(uvp)", sum(uvp[[1]]), "\n")
+    thetap    <- fsimtheta(theta, Sigmatheta, jstheta, npar)  #**
+
     # utility at thetap
-    uup       <- futil(M, Xu, uup, thetap[1:nparu], nparu, nvec, inter.u) #**
-    uvp       <- futil(M, Xv, uvp, thetap[(nparu + 1):(nparu + nparv)], nparv, nvec, inter.v) #**
-    uwp       <- futil(M, Xw, uwp, thetap[(nparu + nparv + 1):npar], nparw, nvec, inter.w) #**
+    uup       <- futil(M, Xu, uup, head(thetap, nparu), hetval[1,], nparu, nvec, inter.u) #**
+    uvp       <- futil(M, Xv, uvp, thetap[(nparu + 1):(nparu + nparv)], hetval[2,], nparv, nvec, inter.v) #**
+    uwp       <- futil(M, Xw, uwp, tail(thetap, nparw), hetval[3,], nparw, nvec, inter.w) #**
     
     # potential function at a (ie, network) and thetap
-    pot_athp  <- fpotendir(M, network, uup, uvp, uwp, nparu, nparv, nparw, nvec) #**
-    # cat("sum(uvp)", sum(uvp[[1]]), "\n")
-    # cat("pot_athp ", pot_athp, "\n")
+    pot_athp  <- fpotendir_eachm(M, network, uup, uvp, uwp, nparu, nparv, nparw, nvec) #**
+
     # Gibbs to simulate ap
     networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
       fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
@@ -663,12 +830,11 @@ mcmcDirNet <- function(network,
     cat("Gibbs executed\n")
     
     # potential function at ap 
-    pot_apth  <- fpotendir(M, networkp, uu, uv, uw, nparu, nparv, nparw, nvec)
-    pot_apthp <- fpotendir(M, networkp, uup, uvp, uwp, nparu, nparv, nparw, nvec)
+    pot_apth  <- fpotendir_eachm(M, networkp, uu, uv, uw, nparu, nparv, nparw, nvec)
+    pot_apthp <- fpotendir_eachm(M, networkp, uup, uvp, uwp, nparu, nparv, nparw, nvec)
     
     # acceptance rate of theta
-    lalpha    <- pot_apth - pot_ath + pot_athp - pot_apthp  + propdnorm(thetap, Etheta, invVtheta) - propdnorm(theta, Etheta, invVtheta) 
-    lalpha    <- min(0, lalpha)
+    lalpha      <- sum(pot_apth - pot_ath + pot_athp - pot_apthp) + propdnorm(thetap, Etheta, invVtheta) - propdnorm(theta, Etheta, invVtheta) 
     if(runif(1) < exp(lalpha)){
       theta   <- thetap
       uu      <- uup
@@ -676,15 +842,92 @@ mcmcDirNet <- function(network,
       uw      <- uwp
       pot_ath <- pot_athp
       atheta  <- atheta + 1
-      cat("proposal accepted -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
+      cat("Simulated theta accepted -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
     } else{
-      cat("proposal rejected -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
+      cat("Simulated theta rejected -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
     }
-    jstheta       <- fupdate_jstheta(jstheta, atheta, s, target, kappa, jmin, jmax)
+    jstheta       <- fupdate_jstheta(jstheta, atheta, s, target, kappa, jmin[1], jmax[1])
+    
+    # Update heterogeneity (if any)
+    if (het) {
+      cat("\nUpdating heterogeneity\n")
+      hetvalp[in.het,] <- fsimhete(hetval[in.het, , drop = FALSE], Sigmahete, jshete, khete, M)
+
+      # utility at hetep
+      if (in.ze) {
+        uup     <- futil(M, Xu, uup, head(theta, nparu), hetvalp[1,], nparu, nvec, inter.u) 
+      }
+      if (in.mu) {
+        uvp     <- futil(M, Xv, uvp, theta[(nparu + 1):(nparu + nparv)], hetvalp[2,], nparv, nvec, inter.v) 
+      }
+      if (in.nu) {
+        uwp     <- futil(M, Xw, uwp, tail(theta, nparw), hetvalp[3,], nparw, nvec, inter.w) 
+      }
+      
+      # potential function at a (ie, network) and hetep
+      pot_athp  <- fpotendir_eachm(M, network, uup, uvp, uwp, nparu, nparv, nparw, nvec)
+      
+      # Gibbs to simulate ap
+      networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
+        fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+                 uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
+      cat("Gibbs executed\n")
+      
+      # potential function at ap 
+      pot_apth  <- fpotendir_eachm(M, networkp, uu, uv, uw, nparu, nparv, nparw, nvec)
+      pot_apthp <- fpotendir_eachm(M, networkp, uup, uvp, uwp, nparu, nparv, nparw, nvec)
+      
+      # acceptance rate of theta
+      lalpha      <- pot_apth - pot_ath + pot_athp - pot_apthp + propdnorm_eachm(hetvalp[in.het, , drop = FALSE], Omega) - propdnorm_eachm(hetval[in.het, , drop = FALSE], Omega)
+      tp          <- runif(M) < exp(lalpha)
+      hetval[,tp] <- hetvalp[,tp]
+      if (length(int.upd) > 0){
+        hetval[in.het,] <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
+      }
+      if (in.ze) {
+        uu[tp]    <- uup[tp]
+      }
+      if (in.mu) {
+        uv[tp]    <- uvp[tp]
+      }
+      if (in.nu) {
+        uw[tp]    <- uwp[tp]
+      }
+      pot_ath[tp] <- pot_athp[tp]
+      ahete[tp]   <- ahete[tp] + 1
+      cat("Share of accepted heterogeneity: ", round(mean(tp)*100, 1), "%\n", sep = "")
+      tp          <- 100*ahete/s
+      cat("Acceptance rate\n min: ", round(min(tp), 1), "% -- median: ", round(median(tp), 1), "% -- max: ",  
+          round(max(tp), 1), "%\n", sep = "")
+      jshete      <- fupdate_jshete(jshete, ahete, s, target, kappa, jmin[2], jmax[2])
+      simhete[s,] <- c(hetval[in.het, , drop = FALSE])
+      sJS[s, 2:(M + 1)] <- jshete
+      
+      # Update Omega
+      Omega        <- updateOmega(dfOmega, scOmega, M, hetval[in.het, , drop = FALSE])
+      simOmega[s,] <- c(Omega)
+    }
     posterior[s,] <- c(theta)
-    spot[s]       <- pot_ath
+    sJS[s, 1]     <- jstheta
+    spot[s]       <- sum(pot_ath)
+    cat("potential: ", spot[s], "\n\n", sep = "")
   }
-  out  <- list(posterior = posterior, potential = spot); class(out) <- "mcmcDirNet"
+  ARate   <- c(atheta, ahete)/simutheta; names(ARate) <- c("theta", paste0("heter", 1:M))
+  if (!het) {
+    sJS   <- unlist(sJS); names(sJS) <- NULL
+    ARate <- ARate[1]
+  }
+  out     <- list(posterior = list(theta         = posterior, 
+                                   heterogeneity = simhete, 
+                                   Omega         = simOmega),
+                  potential  = spot,
+                  jumpscale  = sJS,
+                  acceptrate = ARate,
+                  simutheta  = simutheta,
+                  simunet    = simunet)
+  
+  
+  class(out) <- "mcmcDirNet"
   out
 }
 
@@ -702,14 +945,14 @@ futil        <- function(M, X, u, theta, hetval = rep(0, M), npar, nvec, inter){
 }
 
 # fonction that computes the potential function value
-fpotensym     <- function(M, network, uu, uw, nparu, nparw, nvec){
+fpotensym     <- function(M, network, uv, uw, nparu, nparw, nvec){
   sum(foreach(m = 1:M, .packages  = "mcmcERGM", .combine = "c") %dorng% {
-    fQrsym(network[[m]], uu[[m]], uw[[m]], nparu, nparw, nvec[m])})
+    fQrsym(network[[m]], uv[[m]], uw[[m]], nparu, nparw, nvec[m])})
 }
 
-fpotensym_eachm <- function(M, network, uu, uw, nparu, nparw, nvec){
+fpotensym_eachm <- function(M, network, uv, uw, nparu, nparw, nvec){
   foreach(m = 1:M, .packages  = "mcmcERGM", .combine = "cbind") %dorng% {
-    fQrsym(network[[m]], uu[[m]], uw[[m]], nparu, nparw, nvec[m])}
+    fQrsym(network[[m]], uv[[m]], uw[[m]], nparu, nparw, nvec[m])}
 }
 
 fpotendir     <- function(M, network, uu, uv, uw, nparu, nparv, nparw, nvec){
@@ -718,8 +961,8 @@ fpotendir     <- function(M, network, uu, uv, uw, nparu, nparv, nparw, nvec){
 }
 
 fpotendir_eachm <- function(M, network, uu, uv, uw, nparu, nparv, nparw, nvec){
-  sum(foreach(m = 1:M, .packages  = "mcmcERGM", .combine = "cbind") %dorng% {
-    fQrdir(network[[m]], uu[[m]], uv[[m]], uw[[m]], nparu, nparv, nparw, nvec[m])})
+  foreach(m = 1:M, .packages  = "mcmcERGM", .combine = "cbind") %dorng% {
+    fQrdir(network[[m]], uu[[m]], uv[[m]], uw[[m]], nparu, nparv, nparw, nvec[m])}
 }
 
 # formula to variable
@@ -741,6 +984,3 @@ fvarnames  <- function(ftovar, Xnames, K, intercept, prefix){
   }
   out      <- paste0(prefix, ".", out)
 }
-
-
-

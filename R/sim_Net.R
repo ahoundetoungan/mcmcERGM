@@ -354,9 +354,9 @@ simDirNet <- function(formula.u,
   uv          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
 
-  uu          <- futil(M, Xu, uu, theta[1:nparu], nparu, nvec, inter.u)
-  uv          <- futil(M, Xv, uv, theta[(nparu + 1):(nparu + nparv)], nparv, nvec, inter.v)
-  uw          <- futil(M, Xw, uw, theta[(nparu + nparv + 1):npar], nparw, nvec, inter.w)
+  uu          <- futil(M = M, X = Xu, u = uu, theta = head(theta, nparu), npar = nparu, nvec = nvec, inter = inter.u)
+  uv          <- futil(M = M, X = Xv, u = uv, theta = theta[(nparu + 1):(nparu + nparv)], npar = nparv, nvec = nvec, inter = inter.v)
+  uw          <- futil(M = M, X = Xw, u = uw, theta = tail(theta, nparw), npar = nparw, nvec = nvec, inter = inter.w)
   
   # Simulations
   combr       <- ffindcom(nblock) 

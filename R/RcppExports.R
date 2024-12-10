@@ -13,6 +13,10 @@ propdnorm_eachm <- function(x, V) {
     .Call(`_mcmcERGM_propdnorm_eachm`, x, V)
 }
 
+propdproposal <- function(x, V, js) {
+    .Call(`_mcmcERGM_propdproposal`, x, V, js)
+}
+
 fsimtheta <- function(mu, Sigma, js, npar) {
     .Call(`_mcmcERGM_fsimtheta`, mu, Sigma, js, npar)
 }
@@ -33,8 +37,8 @@ futility <- function(X, theta, hetval, npar, n, intercept) {
     .Call(`_mcmcERGM_futility`, X, theta, hetval, npar, n, intercept)
 }
 
-fQrsym <- function(ar, ur, wr, npu, npw, nr) {
-    .Call(`_mcmcERGM_fQrsym`, ar, ur, wr, npu, npw, nr)
+fQrsym <- function(ar, vr, wr, npu, npw, nr) {
+    .Call(`_mcmcERGM_fQrsym`, ar, vr, wr, npu, npw, nr)
 }
 
 fQrdir <- function(ar, ur, vr, wr, npu, npv, npw, nr) {
@@ -71,6 +75,10 @@ fupdate_jstheta <- function(jscal, accept, iteration, target, kappa, jmin, jmax)
 
 fupdate_jshete <- function(jscal, accept, iteration, target, kappa, jmin, jmax) {
     .Call(`_mcmcERGM_fupdate_jshete`, jscal, accept, iteration, target, kappa, jmin, jmax)
+}
+
+frecentering <- function(theta, hetval, intindex) {
+    .Call(`_mcmcERGM_frecentering`, theta, hetval, intindex)
 }
 
 frMtoV <- function(u, N, M) {
