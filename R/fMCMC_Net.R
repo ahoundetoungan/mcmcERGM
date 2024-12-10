@@ -66,7 +66,7 @@ mcmcSymNet <- function(network,
     name.v    <- Xv$names
     Xv        <- Xv$X
     Kv        <- ncol(Xv)
-    if(length(f_to_var.v) != Kv) stop("length(f_to_var.v) does not match with formula.v")
+    if(length(f_to_var.v) != Kv) stop("The length of f_to_var.v does not match formula.v")
     nvaru     <- length(unlist(f_to_var.v))
     Xv        <- lapply(1:M, function(m) Xv[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "M")
@@ -77,7 +77,7 @@ mcmcSymNet <- function(network,
     name.w    <- Xw$names
     Xw        <- Xw$X
     Kw        <- ncol(Xw)
-    if(length(f_to_var.w) != Kw) stop("length(f_to_var.w) does not match with formula.w")
+    if(length(f_to_var.w) != Kw) stop("The length of f_to_var.w does not match formula.w")
     nvarw     <- length(unlist(f_to_var.w))
     Xw        <- lapply(1:M, function(m) Xw[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.w   <- fvarnames(f_to_var.w, name.w, Kw, inter.w, "I")
@@ -302,7 +302,7 @@ mcmcSymNet <- function(network,
     simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
     simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
     nacol     <- c("mu", "nu")[in.het] 
-    colnames(simhete)  <- paste0(rep(nacol, M), rep(1:M, each = khete))
+    colnames(simhete)  <- paste0(rep(nacol, each = M), rep(1:M, khete))
     colnames(simOmega) <- paste0("s_", sapply(nacol, function(s1) sapply(nacol, function(s2) paste0(s1, s2))))
     colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
   } 
@@ -400,7 +400,7 @@ mcmcSymNet <- function(network,
       cat("Acceptance rate\n min: ", round(min(tp), 1), "% -- median: ", round(median(tp), 1), "% -- max: ",  round(max(tp), 1), 
           "%\n", sep = "")
       jshete      <- fupdate_jshete(jshete, ahete, s, target, kappa, jmin[2], jmax[2])
-      simhete[s,] <- c(hetval[in.het, , drop = FALSE])
+      simhete[s,] <- c(t(hetval[in.het, , drop = FALSE]))
       sJS[s, 2:(M + 1)] <- jshete
       
       # Update Omega
@@ -599,7 +599,7 @@ mcmcDirNet <- function(network,
   }
   if (het) {
     if (length(ze) == 1) {
-      ze  <- rep(mu, M)
+      ze  <- rep(ze, M)
     } else if (length(ze) != M) {
       stop("'zeta' must be either a scalar or a vector of length M")
     }
@@ -790,7 +790,7 @@ mcmcDirNet <- function(network,
     simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
     simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
     nacol     <- c("zeta", "mu", "nu")[in.het] 
-    colnames(simhete)  <- paste0(rep(nacol, M), rep(1:M, each = khete))
+    colnames(simhete)  <- paste0(rep(nacol, each = M), rep(1:M, khete))
     colnames(simOmega) <- paste0("s_", sapply(nacol, function(s1) sapply(nacol, function(s2) paste0(s1, s2))))
     colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
   } 
@@ -869,8 +869,8 @@ mcmcDirNet <- function(network,
       
       # Gibbs to simulate ap
       networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-        fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
-                 uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
+        fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+                 uup[[m]], uvp[[m]], uwp[[m]], nparu, nparv, nparw, nvec[[m]], simunet)}
       cat("Gibbs executed\n")
       
       # potential function at ap 
@@ -900,7 +900,7 @@ mcmcDirNet <- function(network,
       cat("Acceptance rate\n min: ", round(min(tp), 1), "% -- median: ", round(median(tp), 1), "% -- max: ",  
           round(max(tp), 1), "%\n", sep = "")
       jshete      <- fupdate_jshete(jshete, ahete, s, target, kappa, jmin[2], jmax[2])
-      simhete[s,] <- c(hetval[in.het, , drop = FALSE])
+      simhete[s,] <- c(t(hetval[in.het, , drop = FALSE]))
       sJS[s, 2:(M + 1)] <- jshete
       
       # Update Omega

@@ -87,10 +87,10 @@ simSymNet <- function(formula.v,
     name.v    <- Xv$names
     Xv        <- Xv$X
     Kv        <- ncol(Xv)
-    if(length(f_to_var.v) != Kv) stop("length(f_to_var.v) does not match with formula.v")
+    if(length(f_to_var.v) != Kv) stop("The length of f_to_var.v does not match formula.v")
     nvarv     <- length(unlist(f_to_var.v))
     Xv        <- lapply(1:M, function(m) Xv[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
-    vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "D")
+    vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "M")
   }
   if(!missing(formula.w)){
     Xw        <- formula.to.data(formula.w, data)
@@ -98,7 +98,7 @@ simSymNet <- function(formula.v,
     name.w    <- Xw$names
     Xw        <- Xw$X
     Kw        <- ncol(Xw)
-    if(length(f_to_var.w) != Kw) stop("length(f_to_var.w) does not match with formula.w")
+    if(length(f_to_var.w) != Kw) stop("The length of f_to_var.w does not match formula.w")
     nvarw     <- length(unlist(f_to_var.w))
     Xw        <- lapply(1:M, function(m) Xw[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.w   <- fvarnames(f_to_var.w, name.w, Kw, inter.w, "I")
@@ -280,7 +280,7 @@ simDirNet <- function(formula.u,
     name.u    <- Xu$names
     Xu        <- Xu$X
     Ku        <- ncol(Xu)
-    if(length(f_to_var.u) != Ku) stop("length(f_to_var.u) does not match with formula.u")
+    if(length(f_to_var.u) != Ku) stop("The length of f_to_var.u does not match formula.u")
     nvaru     <- length(unlist(f_to_var.u))
     Xu        <- lapply(1:M, function(m) Xu[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.u   <- fvarnames(f_to_var.u, name.u, Ku, inter.u, "D")
@@ -291,7 +291,7 @@ simDirNet <- function(formula.u,
     name.v    <- Xv$names
     Xv        <- Xv$X
     Kv        <- ncol(Xv)
-    if(length(f_to_var.v) != Kv) stop("length(f_to_var.v) does not match with formula.v")
+    if(length(f_to_var.v) != Kv) stop("The length of f_to_var.v does not match formula.v")
     nvarv     <- length(unlist(f_to_var.v))
     Xv        <- lapply(1:M, function(m) Xv[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.v   <- fvarnames(f_to_var.v, name.v, Kv, inter.v, "M")
@@ -302,7 +302,7 @@ simDirNet <- function(formula.u,
     name.w    <- Xw$names
     Xw        <- Xw$X
     Kw        <- ncol(Xw)
-    if(length(f_to_var.w) != Kw) stop("length(f_to_var.w) does not match with formula.w")
+    if(length(f_to_var.w) != Kw) stop("The length of f_to_var.w does not match formula.w")
     nvarw     <- length(unlist(f_to_var.w))
     Xw        <- lapply(1:M, function(m) Xw[(nveccum[m] + 1):nveccum[m + 1],, drop = FALSE])
     vname.w   <- fvarnames(f_to_var.w, name.w, Kw, inter.w, "I")
