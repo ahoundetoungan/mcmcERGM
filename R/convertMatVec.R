@@ -1,3 +1,4 @@
+#' @export
 vec.to.mat <- function(u, N, normalise = FALSE, byrow = FALSE) {
   M        <- length(N)
   stopifnot(length(u) == sum(N*(N - 1)))
@@ -15,7 +16,7 @@ vec.to.mat <- function(u, N, normalise = FALSE, byrow = FALSE) {
   out
 }
 
-
+#' @export
 mat.to.vec <- function(W, ceiled = FALSE, byrow = FALSE) {
   if (!is.list(W)) {
     if (is.matrix(W)) {

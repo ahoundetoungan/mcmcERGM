@@ -339,6 +339,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// frVtoM
+List frVtoM(const Eigen::VectorXd& u, const Rcpp::IntegerVector& N, const double& M);
+RcppExport SEXP _mcmcERGM_frVtoM(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type u(uSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(frVtoM(u, N, M));
+    return rcpp_result_gen;
+END_RCPP
+}
+// frVtoMnorm
+List frVtoMnorm(const arma::vec& u, const IntegerVector& N, const double& M);
+RcppExport SEXP _mcmcERGM_frVtoMnorm(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type u(uSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(frVtoMnorm(u, N, M));
+    return rcpp_result_gen;
+END_RCPP
+}
 // frMtoV
 Eigen::VectorXd frMtoV(List& u, const Rcpp::IntegerVector& N, const double& M);
 RcppExport SEXP _mcmcERGM_frMtoV(SEXP uSEXP, SEXP NSEXP, SEXP MSEXP) {
@@ -387,6 +413,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mcmcERGM_fupdate_jstheta", (DL_FUNC) &_mcmcERGM_fupdate_jstheta, 7},
     {"_mcmcERGM_fupdate_jshete", (DL_FUNC) &_mcmcERGM_fupdate_jshete, 7},
     {"_mcmcERGM_frecentering", (DL_FUNC) &_mcmcERGM_frecentering, 3},
+    {"_mcmcERGM_frVtoM", (DL_FUNC) &_mcmcERGM_frVtoM, 3},
+    {"_mcmcERGM_frVtoMnorm", (DL_FUNC) &_mcmcERGM_frVtoMnorm, 3},
     {"_mcmcERGM_frMtoV", (DL_FUNC) &_mcmcERGM_frMtoV, 3},
     {"_mcmcERGM_frMceiltoV", (DL_FUNC) &_mcmcERGM_frMceiltoV, 3},
     {NULL, NULL, 0}

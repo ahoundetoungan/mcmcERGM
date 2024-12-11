@@ -81,6 +81,14 @@ frecentering <- function(theta, hetval, intindex) {
     .Call(`_mcmcERGM_frecentering`, theta, hetval, intindex)
 }
 
+frVtoM <- function(u, N, M) {
+    .Call(`_mcmcERGM_frVtoM`, u, N, M)
+}
+
+frVtoMnorm <- function(u, N, M) {
+    .Call(`_mcmcERGM_frVtoMnorm`, u, N, M)
+}
+
 frMtoV <- function(u, N, M) {
     .Call(`_mcmcERGM_frMtoV`, u, N, M)
 }
