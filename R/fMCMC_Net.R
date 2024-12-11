@@ -14,17 +14,16 @@ mcmcSymNet <- function(network,
                        f_to_var.v, 
                        f_to_var.w,
                        heterogeneity,
-                       starting     = NULL,
-                       init.network = NULL,
-                       nblock       = 2,
-                       ncores       = 1, 
-                       prior        = list(),
-                       Sigmatheta   = NULL,
-                       Sigmahete    = NULL,
-                       simutheta    = 1e3,
-                       simunet      = 1e3,
-                       mcmc.ctr     = list(target  = NULL, kappa = 0.6, jmin = 1e-6, jmax = 3), 
-                       data         = NULL){
+                       starting    = NULL,
+                       nblock      = 2,
+                       ncores      = 1, 
+                       prior       = list(),
+                       Sigmatheta  = NULL,
+                       Sigmahete   = NULL,
+                       simutheta   = 1e3,
+                       simunet     = 1e3,
+                       mcmc.ctr    = list(target  = NULL, kappa = 0.6, jmin = 1e-6, jmax = 3), 
+                       data        = NULL){
   stopifnot(is.list(network))
   if(missing(formula.v) & missing(formula.w)){
     stop("both formula.v and formula.w cannot be missing")
@@ -299,7 +298,6 @@ mcmcSymNet <- function(network,
   simOmega    <- NULL
   spot        <- c()
   sJS         <- as.data.frame(matrix(0, simutheta, 1 + het*M)) 
-  
   if (het) {
     simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
     simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
@@ -309,15 +307,6 @@ mcmcSymNet <- function(network,
     colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
   } 
   hetvalp     <- hetval
-  
-  # starting for the network
-  if (is.null(init.network)){
-    cat("Initializing the artificial network\n")
-    init.network <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-      fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
-               uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], 10*simunet)}
-    cat("Gibbs executed\n")
-  }
   
   for (s in 1:simutheta) {
     # simulate theta prime
@@ -343,7 +332,7 @@ mcmcSymNet <- function(network,
     
     # Gibbs to simulate ap
     networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-      fGibbsym(init.network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+      fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
                uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
     cat("Gibbs executed\n")
     
@@ -354,12 +343,11 @@ mcmcSymNet <- function(network,
     # acceptance rate of theta
     lalpha      <- sum(pot_apth - pot_ath + pot_athp - pot_apthp)  + propdnorm(thetap, Etheta, invVtheta) - propdnorm(theta, Etheta, invVtheta) 
     if(runif(1) < exp(lalpha)){
-      theta        <- thetap
-      init.network <- networkp
-      uv           <- uvp
-      uw           <- uwp
-      pot_ath      <- pot_athp
-      atheta       <- atheta + 1
+      theta   <- thetap
+      uv      <- uvp
+      uw      <- uwp
+      pot_ath <- pot_athp
+      atheta  <- atheta + 1
       cat("Simulated theta accepted -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
     } else{
       cat("Simulated theta rejected -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
@@ -384,7 +372,7 @@ mcmcSymNet <- function(network,
       
       # Gibbs to simulate ap
       networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-        fGibbsym(init.network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+        fGibbsym(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
                  uvp[[m]], uwp[[m]], nparv, nparw, nvec[[m]], simunet)}
       cat("Gibbs executed\n")
       
@@ -396,7 +384,6 @@ mcmcSymNet <- function(network,
       lalpha      <- pot_apth - pot_ath + pot_athp - pot_apthp + propdnorm_eachm(hetvalp[in.het, , drop = FALSE], Omega) - propdnorm_eachm(hetval[in.het, , drop = FALSE], Omega)
       tp          <- runif(M) < exp(lalpha)
       hetval[,tp] <- hetvalp[,tp]
-      init.network[tp]  <- networkp[tp]
       if (length(int.upd) > 0){
         hetval[in.het,] <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
       }
@@ -455,7 +442,6 @@ mcmcDirNet <- function(network,
                        f_to_var.w,
                        heterogeneity,
                        starting    = NULL,
-                       init.network = NULL,
                        nblock      = 2,
                        ncores      = 1, 
                        prior       = list(),
@@ -800,7 +786,6 @@ mcmcDirNet <- function(network,
   simOmega    <- NULL
   spot        <- c()
   sJS         <- as.data.frame(matrix(0, simutheta, 1 + het*M)) 
-  
   if (het) {
     simhete   <- as.data.frame(matrix(0, simutheta, M*khete)) 
     simOmega  <- as.data.frame(matrix(0, simutheta, khete^2)) 
@@ -810,15 +795,6 @@ mcmcDirNet <- function(network,
     colnames(sJS)      <- c("theta", paste0("heter.", 1:M))
   } 
   hetvalp     <- hetval
-  
-  # starting for the network
-  if (is.null(init.network)){
-    cat("Initializing the artificial network\n")
-    init.network <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-      fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
-               uup[[m]], uvp[[m]], uwp[[m]], nparu, nparv, nparw, nvec[[m]], 10*simunet)}
-    cat("Gibbs executed\n")
-  }
   
   for (s in 1:simutheta) {
     # simulate theta prime
@@ -849,7 +825,7 @@ mcmcDirNet <- function(network,
 
     # Gibbs to simulate ap
     networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-      fGibbdir(init.network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+      fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
                uup[[m]], uvp[[m]], uwp[[m]], nparu, nparv, nparw, nvec[[m]], simunet)}
     cat("Gibbs executed\n")
     
@@ -860,13 +836,12 @@ mcmcDirNet <- function(network,
     # acceptance rate of theta
     lalpha      <- sum(pot_apth - pot_ath + pot_athp - pot_apthp) + propdnorm(thetap, Etheta, invVtheta) - propdnorm(theta, Etheta, invVtheta) 
     if(runif(1) < exp(lalpha)){
-      theta        <- thetap
-      init.network <- networkp
-      uu           <- uup
-      uv           <- uvp
-      uw           <- uwp
-      pot_ath      <- pot_athp
-      atheta       <- atheta + 1
+      theta   <- thetap
+      uu      <- uup
+      uv      <- uvp
+      uw      <- uwp
+      pot_ath <- pot_athp
+      atheta  <- atheta + 1
       cat("Simulated theta accepted -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
     } else{
       cat("Simulated theta rejected -- acceptance rate: ", round(100*atheta/s, 1), "%\n", sep = "")
@@ -894,7 +869,7 @@ mcmcDirNet <- function(network,
       
       # Gibbs to simulate ap
       networkp  <- foreach(m = 1:M, .packages  = "mcmcERGM") %dorng% {
-        fGibbdir(init.network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
+        fGibbdir(network[[m]], nblock, ncombr, combr, idrows[[m]], idcols[[m]], ident[[m]], ztncombr, 
                  uup[[m]], uvp[[m]], uwp[[m]], nparu, nparv, nparw, nvec[[m]], simunet)}
       cat("Gibbs executed\n")
       
@@ -906,7 +881,6 @@ mcmcDirNet <- function(network,
       lalpha      <- pot_apth - pot_ath + pot_athp - pot_apthp + propdnorm_eachm(hetvalp[in.het, , drop = FALSE], Omega) - propdnorm_eachm(hetval[in.het, , drop = FALSE], Omega)
       tp          <- runif(M) < exp(lalpha)
       hetval[,tp] <- hetvalp[,tp]
-      init.network[tp]  <- networkp[tp]
       if (length(int.upd) > 0){
         hetval[in.het,] <- frecentering(theta, hetval[in.het, , drop = FALSE], int.upd)
       }

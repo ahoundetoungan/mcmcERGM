@@ -14,7 +14,6 @@ mcmcDirNet(
   f_to_var.w,
   heterogeneity,
   starting = NULL,
-  init.network = NULL,
   nblock = 2,
   ncores = 1,
   prior = list(),
