@@ -312,6 +312,7 @@ mcmcSymNet <- function(network,
     # simulate theta prime
     cat("********************* Iteration: ", s, "/", simutheta, "\n", sep = "")
     cat("Updating theta\n")
+    cat("Jumping Scale: ", jstheta, "\n", sep = "")
     if(nparv > 0){
       cat("mutual links\n")
       cat(head(theta, nparv), "\n")
@@ -357,6 +358,8 @@ mcmcSymNet <- function(network,
     # Update heterogeneity (if any)
     if (het) {
       cat("\nUpdating heterogeneity\n")
+      cat("Jumping Scale\n ", "min: ", min(jshete), " -- median: ", median(jshete), " -- max: ",  
+          max(jshete), "\n", sep = "")
       hetvalp[in.het,] <- fsimhete(hetval[in.het, , drop = FALSE], Sigmahete, jshete, khete, M)
       
       # utility at hetep
@@ -800,6 +803,7 @@ mcmcDirNet <- function(network,
     # simulate theta prime
     cat("********************* Iteration: ", s, "/", simutheta, "\n", sep = "")
     cat("Updating theta\n")
+    cat("Jumping Scale: ", jstheta, "\n", sep = "")
     if(nparu > 0){
       cat("direct links\n")
       cat(head(theta, nparu), "\n")
@@ -851,6 +855,8 @@ mcmcDirNet <- function(network,
     # Update heterogeneity (if any)
     if (het) {
       cat("\nUpdating heterogeneity\n")
+      cat("Jumping Scale\n ", "min: ", min(jshete), " -- median: ", median(jshete), " -- max: ",  
+          max(jshete), "\n", sep = "")
       hetvalp[in.het,] <- fsimhete(hetval[in.het, , drop = FALSE], Sigmahete, jshete, khete, M)
 
       # utility at hetep
