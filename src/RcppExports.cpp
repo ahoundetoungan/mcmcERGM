@@ -27,39 +27,39 @@ BEGIN_RCPP
 END_RCPP
 }
 // propdnorm
-double propdnorm(const arma::vec& x, const arma::vec& mu, const arma::mat& invV);
+double propdnorm(const Eigen::VectorXd& x, const Eigen::VectorXd& mu, const Eigen::MatrixXd& invV);
 RcppExport SEXP _mcmcERGM_propdnorm(SEXP xSEXP, SEXP muSEXP, SEXP invVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type invV(invVSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type invV(invVSEXP);
     rcpp_result_gen = Rcpp::wrap(propdnorm(x, mu, invV));
     return rcpp_result_gen;
 END_RCPP
 }
 // propdnorm_eachm
-arma::rowvec propdnorm_eachm(const arma::mat& x, const arma::mat& V);
+Eigen::RowVectorXd propdnorm_eachm(const Eigen::MatrixXd& x, const Eigen::MatrixXd& V);
 RcppExport SEXP _mcmcERGM_propdnorm_eachm(SEXP xSEXP, SEXP VSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type V(VSEXP);
     rcpp_result_gen = Rcpp::wrap(propdnorm_eachm(x, V));
     return rcpp_result_gen;
 END_RCPP
 }
 // propdproposal
-arma::rowvec propdproposal(const arma::mat& x, const arma::mat& V, const arma::rowvec& js);
+Eigen::RowVectorXd propdproposal(const Eigen::ArrayXXd& x, const Eigen::MatrixXd& V, const Eigen::RowVectorXd& js);
 RcppExport SEXP _mcmcERGM_propdproposal(SEXP xSEXP, SEXP VSEXP, SEXP jsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
-    Rcpp::traits::input_parameter< const arma::rowvec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const Eigen::RowVectorXd& >::type js(jsSEXP);
     rcpp_result_gen = Rcpp::wrap(propdproposal(x, V, js));
     return rcpp_result_gen;
 END_RCPP
@@ -94,7 +94,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // ffindcom
-arma::mat ffindcom(const int& n);
+Eigen::MatrixXd ffindcom(const int& n);
 RcppExport SEXP _mcmcERGM_ffindcom(SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -135,31 +135,31 @@ BEGIN_RCPP
 END_RCPP
 }
 // fQrsym
-double fQrsym(const arma::mat& ar, const arma::mat& vr, const arma::mat& wr, const int& npu, const int& npw, const int& nr);
-RcppExport SEXP _mcmcERGM_fQrsym(SEXP arSEXP, SEXP vrSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP) {
+double fQrsym(const Eigen::ArrayXXd& ar, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& wr, const int& npu, const int& npw, const int& nr);
+RcppExport SEXP _mcmcERGM_fQrsym(SEXP arSEXP, SEXP urSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vr(vrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
     Rcpp::traits::input_parameter< const int& >::type nr(nrSEXP);
-    rcpp_result_gen = Rcpp::wrap(fQrsym(ar, vr, wr, npu, npw, nr));
+    rcpp_result_gen = Rcpp::wrap(fQrsym(ar, ur, wr, npu, npw, nr));
     return rcpp_result_gen;
 END_RCPP
 }
 // fQrdir
-double fQrdir(const arma::mat& ar, const arma::mat& ur, const arma::mat& vr, const arma::mat& wr, const int& npu, const int& npv, const int& npw, const int& nr);
+double fQrdir(const Eigen::ArrayXXd& ar, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& vr, const Eigen::ArrayXXd& wr, const int& npu, const int& npv, const int& npw, const int& nr);
 RcppExport SEXP _mcmcERGM_fQrdir(SEXP arSEXP, SEXP urSEXP, SEXP vrSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npvSEXP, SEXP npwSEXP, SEXP nrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vr(vrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type vr(vrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npv(npvSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
@@ -169,12 +169,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // fGibbsym
-arma::mat fGibbsym(const arma::mat& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const arma::mat& ur, const arma::mat& wr, const int& npu, const int& npw, const int& nr, const int& R);
+Eigen::ArrayXXd fGibbsym(const Eigen::ArrayXXd& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& wr, const int& npu, const int& npw, const int& nr, const int& R);
 RcppExport SEXP _mcmcERGM_fGibbsym(SEXP arSEXP, SEXP nblockSEXP, SEXP ncombrSEXP, SEXP combrSEXP, SEXP idrowsSEXP, SEXP idcolsSEXP, SEXP identSEXP, SEXP ztncombrSEXP, SEXP urSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP, SEXP RSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
     Rcpp::traits::input_parameter< const int& >::type nblock(nblockSEXP);
     Rcpp::traits::input_parameter< const int& >::type ncombr(ncombrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type combr(combrSEXP);
@@ -182,8 +182,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type idcols(idcolsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ident(identSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ztncombr(ztncombrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
     Rcpp::traits::input_parameter< const int& >::type nr(nrSEXP);
@@ -193,12 +193,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // fGibbdir
-arma::mat fGibbdir(const arma::mat& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const arma::mat& ur, const arma::mat& vr, const arma::mat& wr, const int& npu, const int& npv, const int& npw, const int& nr, const int& R);
+Eigen::ArrayXXd fGibbdir(const Eigen::ArrayXXd& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& vr, const Eigen::ArrayXXd& wr, const int& npu, const int& npv, const int& npw, const int& nr, const int& R);
 RcppExport SEXP _mcmcERGM_fGibbdir(SEXP arSEXP, SEXP nblockSEXP, SEXP ncombrSEXP, SEXP combrSEXP, SEXP idrowsSEXP, SEXP idcolsSEXP, SEXP identSEXP, SEXP ztncombrSEXP, SEXP urSEXP, SEXP vrSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npvSEXP, SEXP npwSEXP, SEXP nrSEXP, SEXP RSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
     Rcpp::traits::input_parameter< const int& >::type nblock(nblockSEXP);
     Rcpp::traits::input_parameter< const int& >::type ncombr(ncombrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type combr(combrSEXP);
@@ -206,9 +206,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type idcols(idcolsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ident(identSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ztncombr(ztncombrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vr(vrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type vr(vrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npv(npvSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
@@ -219,12 +219,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // fGibbsym2
-List fGibbsym2(const arma::mat& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const arma::mat& ur, const arma::mat& wr, const int& npu, const int& npw, const int& nr, const int& R);
+List fGibbsym2(const Eigen::ArrayXXd& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& wr, const int& npu, const int& npw, const int& nr, const int& R);
 RcppExport SEXP _mcmcERGM_fGibbsym2(SEXP arSEXP, SEXP nblockSEXP, SEXP ncombrSEXP, SEXP combrSEXP, SEXP idrowsSEXP, SEXP idcolsSEXP, SEXP identSEXP, SEXP ztncombrSEXP, SEXP urSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npwSEXP, SEXP nrSEXP, SEXP RSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
     Rcpp::traits::input_parameter< const int& >::type nblock(nblockSEXP);
     Rcpp::traits::input_parameter< const int& >::type ncombr(ncombrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type combr(combrSEXP);
@@ -232,8 +232,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type idcols(idcolsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ident(identSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ztncombr(ztncombrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);
     Rcpp::traits::input_parameter< const int& >::type nr(nrSEXP);
@@ -243,12 +243,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // fGibbdir2
-List fGibbdir2(const arma::mat& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const arma::mat& ur, const arma::mat& vr, const arma::mat& wr, const int& npu, const int& npv, const int& npw, const int& nr, const int& R);
+List fGibbdir2(const Eigen::ArrayXXd& ar, const int& nblock, const int& ncombr, const arma::mat& combr, const arma::uvec& idrows, const arma::uvec& idcols, const arma::uvec& ident, const arma::uvec& ztncombr, const Eigen::ArrayXXd& ur, const Eigen::ArrayXXd& vr, const Eigen::ArrayXXd& wr, const int& npu, const int& npv, const int& npw, const int& nr, const int& R);
 RcppExport SEXP _mcmcERGM_fGibbdir2(SEXP arSEXP, SEXP nblockSEXP, SEXP ncombrSEXP, SEXP combrSEXP, SEXP idrowsSEXP, SEXP idcolsSEXP, SEXP identSEXP, SEXP ztncombrSEXP, SEXP urSEXP, SEXP vrSEXP, SEXP wrSEXP, SEXP npuSEXP, SEXP npvSEXP, SEXP npwSEXP, SEXP nrSEXP, SEXP RSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ar(arSEXP);
     Rcpp::traits::input_parameter< const int& >::type nblock(nblockSEXP);
     Rcpp::traits::input_parameter< const int& >::type ncombr(ncombrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type combr(combrSEXP);
@@ -256,9 +256,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type idcols(idcolsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ident(identSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type ztncombr(ztncombrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type ur(urSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vr(vrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type wr(wrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type ur(urSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type vr(vrSEXP);
+    Rcpp::traits::input_parameter< const Eigen::ArrayXXd& >::type wr(wrSEXP);
     Rcpp::traits::input_parameter< const int& >::type npu(npuSEXP);
     Rcpp::traits::input_parameter< const int& >::type npv(npvSEXP);
     Rcpp::traits::input_parameter< const int& >::type npw(npwSEXP);

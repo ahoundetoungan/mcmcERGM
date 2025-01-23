@@ -37,8 +37,8 @@ futility <- function(X, theta, hetval, npar, n, intercept) {
     .Call(`_mcmcERGM_futility`, X, theta, hetval, npar, n, intercept)
 }
 
-fQrsym <- function(ar, vr, wr, npu, npw, nr) {
-    .Call(`_mcmcERGM_fQrsym`, ar, vr, wr, npu, npw, nr)
+fQrsym <- function(ar, ur, wr, npu, npw, nr) {
+    .Call(`_mcmcERGM_fQrsym`, ar, ur, wr, npu, npw, nr)
 }
 
 fQrdir <- function(ar, ur, vr, wr, npu, npv, npw, nr) {

@@ -6,9 +6,9 @@
 \usage{
 mcmcSymNet(
   network,
-  formula.v,
+  formula.u,
   formula.w,
-  f_to_var.v,
+  f_to_var.u,
   f_to_var.w,
   heterogeneity,
   starting = NULL,

@@ -1,9 +1,15 @@
-// [[Rcpp::depends(RcppArmadillo, RcppDist)]]
+// [[Rcpp::depends(RcppArmadillo, RcppEigen, RcppDist)]]
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
 #include <wishart.h>
-#define NDEBUG 1
+// #define NDEBUG
+// #include <RcppNumerical.h>
+#include <RcppEigen.h>
+// 
+// typedef Eigen::Map<Eigen::MatrixXd> MapMatr;
+// typedef Eigen::Map<Eigen::VectorXd> MapVect;
 
+// using namespace Numer;
 using namespace Rcpp;
 using namespace arma;
 using namespace std;
@@ -20,24 +26,40 @@ arma::mat updateOmega(const double& dfa,
 
 // this function compute the variable part the dnorm
 //[[Rcpp::export]]
-double propdnorm(const arma::vec& x, const arma::vec& mu, const arma::mat& invV){
-  arma::vec tmp = (x - mu);
-  return -0.5*arma::sum(tmp%(invV*tmp));
+double propdnorm(const Eigen::VectorXd& x, const Eigen::VectorXd& mu, const Eigen::MatrixXd& invV){
+  Eigen::VectorXd tmp = (x - mu);
+  return -0.5*(tmp.array()*(invV*tmp).array()).sum();
 }
+
+// //[[Rcpp::export]]
+// double propdnorm2(const arma::vec& x, const arma::vec& mu, const arma::mat& invV){
+//   arma::vec tmp = (x - mu);
+//   return -0.5*arma::sum(tmp%(invV*tmp));
+// }
 
 // when there are many points
 //[[Rcpp::export]]
-arma::rowvec propdnorm_eachm(const arma::mat& x, const arma::mat& V){
-  return -0.5*arma::sum(x%arma::solve(V, x), 0);
+Eigen::RowVectorXd propdnorm_eachm(const Eigen::MatrixXd& x, const Eigen::MatrixXd& V){
+  return -0.5*(x.array()*(V.colPivHouseholderQr().solve(x)).array()).colwise().sum();
 }
 
+// //[[Rcpp::export]]
+// arma::rowvec propdnorm_eachm2(const arma::mat& x, const arma::mat& V){
+//   return -0.5*arma::sum(x%arma::solve(V, x), 0);
+// }
 
 // when there are many points with different jumping scale
 //[[Rcpp::export]]
-arma::rowvec propdproposal(const arma::mat& x, const arma::mat& V, const arma::rowvec& js){
-  return -0.5*arma::sum(x%arma::solve(V, x.each_row()%pow(js, 2)), 0);
+Eigen::RowVectorXd propdproposal(const Eigen::ArrayXXd& x, const Eigen::MatrixXd& V, const Eigen::RowVectorXd& js){
+  // Eigen::MatrixXd tp(x.rowwise()*js.array().square()).matrix();
+  return -0.5*(x*(V.colPivHouseholderQr().solve((x.rowwise()*js.array().square()).matrix())).array()).colwise().sum();
 }
 
+
+// //[[Rcpp::export]]
+// arma::rowvec propdproposal2(const arma::mat& x, const arma::mat& V, const arma::rowvec& js){
+//   return -0.5*arma::sum(x%arma::solve(V, x.each_row()%pow(js, 2)), 0);
+// }
 
 
 // this function simulate theta prime
@@ -64,28 +86,49 @@ arma::mat fsimhete(const arma::mat& mu, const arma::mat& Sigma, const arma::rowv
 // 7 ---> 0 1 1
 // 8 ---> 1 1 1
 //[[Rcpp::export]]
-arma::mat ffindcom(const int& n){
-  int ncombr              = pow(2, n);
-  arma::mat out(ncombr, n, arma::fill::zeros);
-  for(int x(1); x <= ncombr; ++ x){
-    int i                 = n;
-    int y                 = x;
-    while(i > 0){
-      int tm              = pow(2, i - 1);
-      if(y > tm){
+Eigen::MatrixXd ffindcom(const int& n) {
+  int ncombr(pow(2, n));
+  Eigen::MatrixXd out(Eigen::MatrixXd::Zero(ncombr, n));
+  for (int x(1); x <= ncombr; ++x) {
+    int i(n), y(x);
+    while (i > 0) {
+      int tm(pow(2, i - 1));
+      if (y > tm) {
         out(x - 1, i - 1) = 1;
-        y                -= tm;
+        y -= tm;
       }
-      -- i;
+      --i;
     }
   }
   return out;
 }
 
+
+// //[[Rcpp::export]]
+// arma::mat ffindcom2(const int& n){
+//   int ncombr              = pow(2, n);
+//   arma::mat out(ncombr, n, arma::fill::zeros);
+//   for(int x(1); x <= ncombr; ++ x){
+//     int i                 = n;
+//     int y                 = x;
+//     while(i > 0){
+//       int tm              = pow(2, i - 1);
+//       if(y > tm){
+//         out(x - 1, i - 1) = 1;
+//         y                -= tm;
+//       }
+//       -- i;
+//     }
+//   }
+//   return out;
+// }
+
 // this function organizes the data in the suitable shape
 // We first compute intermediate function
 // Use i characteristics
-arma::mat fdatai(const arma::vec& Xk, const int& n){return arma::repmat(Xk, 1, n);}
+arma::mat fdatai(const arma::vec& Xk, const int& n) {
+  return arma::repmat(Xk, 1, n);
+}
 
 // Use j characteristics
 arma::mat fdataj(const arma::vec& Xk, const int& n){return arma::repmat(Xk.t(), n, 1);}
@@ -101,11 +144,7 @@ arma::mat fdatasum(const arma::vec& Xk, const int& n){
 
 // prod
 arma::mat fdataprod(const arma::vec& Xk, const int& n){
-  arma::mat out(n, n, arma::fill::zeros);
-  for(int i(0); i < (n - 1); ++ i){
-    out.submat(i + 1, i, n - 1, i) = (Xk.subvec(i + 1, n - 1)*Xk(i));
-  }
-  return out + out.t();
+  return Xk*Xk.t();
 }
 
 // Use Xi = Xj
@@ -210,75 +249,132 @@ arma::mat futility(const arma::cube& X,
   if(intercept){
     out += theta(0);
   }
+  out.diag().zeros();
   return out;
 }
 
 // this function computes the potential function for the case of symmetric networks
 //[[Rcpp::export]]
-double fQrsym(const arma::mat& ar, 
-              const arma::mat& vr, 
-              const arma::mat& wr, 
+double fQrsym(const Eigen::ArrayXXd& ar, 
+              const Eigen::ArrayXXd& ur, 
+              const Eigen::ArrayXXd& wr, 
               const int& npu,
               const int& npw,
               const int& nr){
-  double out   = 0;
+  double out(0);
   if(npw > 0){
-    arma::vec tmp(1, arma::fill::zeros);
-    for(int i(0); i < (nr - 1); ++ i){
+    Eigen::MatrixXd tp(wr*(ar.matrix()*ar.matrix()).array());
+    for(int i(0); i < nr; ++ i){
       for(int k(i + 1); k < nr; ++ k){
-        tmp   += (wr(i,k)*ar.row(i)*ar.col(k));
+        out   += tp(i,k);
       }
     }
-    out        = arma::accu(tmp);
   }
   
   if(npu > 0){
-    out       += arma::accu(ar%vr);
+    out       += (ar*ur).sum();
   }
-  
   return out;
 }
 
+// //[[Rcpp::export]]
+// double fQrsym2(const arma::mat& ar, 
+//               const arma::mat& ur, 
+//               const arma::mat& wr, 
+//               const int& npu,
+//               const int& npw,
+//               const int& nr){
+//   double out   = 0;
+//   if(npw > 0){
+//     arma::vec tmp(1, arma::fill::zeros);
+//     for(int i(0); i < (nr - 1); ++ i){
+//       for(int k(i + 1); k < nr; ++ k){
+//         tmp   += (wr(i,k)*ar.row(i)*ar.col(k));
+//       }
+//     }
+//     out        = arma::accu(tmp);
+//   }
+//   
+//   if(npu > 0){
+//     out       += arma::accu(ar%ur);
+//   }
+//   
+//   return out;
+// }
+
 // this function computes the potential function for the case of symmetric networks
 //[[Rcpp::export]]
-double fQrdir(const arma::mat& ar, 
-              const arma::mat& ur, 
-              const arma::mat& vr,
-              const arma::mat& wr, 
+double fQrdir(const Eigen::ArrayXXd& ar, 
+              const Eigen::ArrayXXd& ur, 
+              const Eigen::ArrayXXd& vr,
+              const Eigen::ArrayXXd& wr, 
               const int& npu,
               const int& npv,
               const int& npw,
               const int& nr){
   double out   = 0;
+  // Mutual
   if(npw > 0){
-    arma::vec tmp(1, arma::fill::zeros);
-    for(int i(0); i < nr; ++ i){
-      for(int k(0); k < nr; ++ k){
-        if(k != i){
-          tmp += (wr(i,k)*ar.row(i)*ar.col(k));
-        }
-      }
-    }
-    out        = arma::accu(tmp);
+    out        = (wr*(ar.matrix()*ar.matrix()).array()).sum();
   }
   
+  // Direct
   if(npu > 0){
-    out       += arma::accu(ar%ur);
+    out       += (ar*ur).sum();
   }
   
+  // Mutual
   if(npv > 0){
     // cout<<accu(ar)<<endl;
     // cout<<accu(vr)<<endl;
-    out       += (0.5*arma::accu(ar%vr%ar.t()));
+    out       += (0.5*(ar*vr*ar.transpose()).sum());
   }
   // cout<<out<<endl;
   
   return out;
 }
 
+// Armadillo Version
+// //[[Rcpp::export]]
+// double fQrdir2(const arma::mat& ar, 
+//               const arma::mat& ur, 
+//               const arma::mat& vr,
+//               const arma::mat& wr, 
+//               const int& npu,
+//               const int& npv,
+//               const int& npw,
+//               const int& nr){
+//   double out   = 0;
+//   if(npw > 0){
+//     arma::vec tmp(1, arma::fill::zeros);
+//     for(int i(0); i < nr; ++ i){
+//       for(int k(0); k < nr; ++ k){
+//         if(k != i){
+//           tmp += (wr(i,k)*ar.row(i)*ar.col(k));
+//         }
+//       }
+//     }
+//     out        = arma::accu(tmp);
+//   }
+//   
+//   if(npu > 0){
+//     out       += arma::accu(ar%ur);
+//   }
+//   
+//   if(npv > 0){
+//     // cout<<accu(ar)<<endl;
+//     // cout<<accu(vr)<<endl;
+//     out       += (0.5*arma::accu(ar%vr%ar.t()));
+//   }
+//   // cout<<out<<endl;
+//   
+//   return out;
+// }
+
+
 // this function runs one iteration of the Gibbs on the network. 
 // It updates a random samples of nblock entries
-void Gibbsymi(arma::mat& arp,  // will be updated
+void Gibbsymi(Eigen::ArrayXXd& arp,  // will be updated
               double& potr,   // will be updated
               const int& nblock,
               const int& ncombr, // number of combinations
@@ -287,14 +383,14 @@ void Gibbsymi(arma::mat& arp,  // will be updated
               const arma::uvec& idcols,
               const arma::uvec& ident,
               const arma::uvec& ztncombr, //0 to ncombr - 1
-              const arma::mat& ur, 
-              const arma::mat& wr, 
+              const Eigen::ArrayXXd& ur, 
+              const Eigen::ArrayXXd& wr, 
               const int& npu,
               const int& npw,
               const int& nr){
   arma::uvec selent = Rcpp::RcppArmadillo::sample(ident, nblock, false);
   arma::vec potrp(ncombr); //to store the potential function values
-  arma::mat arp2    = arp;      //new network
+  Eigen::ArrayXXd arp2(arp);      //new network
   // cout<<selent.t()<<endl;
   // we only change selected entries
   for(int s(0); s < ncombr; ++ s){
@@ -327,7 +423,7 @@ void Gibbsymi(arma::mat& arp,  // will be updated
 }
 
 // same function for the case of directed network
-void Gibbdiri(arma::mat& arp,  // will be updated
+void Gibbdiri(Eigen::ArrayXXd& arp,  // will be updated
               double& potr,   // will be updated
               const int& nblock,
               const int& ncombr,
@@ -336,16 +432,16 @@ void Gibbdiri(arma::mat& arp,  // will be updated
               const arma::uvec& idcols,
               const arma::uvec& ident,
               const arma::uvec& ztncombr, //0 to ncombr - 1
-              const arma::mat& ur, 
-              const arma::mat& vr, 
-              const arma::mat& wr, 
+              const Eigen::ArrayXXd& ur, 
+              const Eigen::ArrayXXd& vr, 
+              const Eigen::ArrayXXd& wr, 
               const int& npu,
               const int& npv,
               const int& npw,
               const int& nr){
   arma::uvec selent = Rcpp::RcppArmadillo::sample(ident, nblock, false);
   arma::vec potrp(ncombr);      //to store the potential function values
-  arma::mat arp2    = arp;      //new network
+  Eigen::ArrayXXd arp2(arp);      //new network
   // cout<<selent.t()<<endl;
   // we only change selected entries
   for(int s(0); s < ncombr; ++ s){
@@ -379,7 +475,7 @@ void Gibbdiri(arma::mat& arp,  // will be updated
 
 // this function runs the Gibbs on the network fo simulate a^{prime}
 //[[Rcpp::export]]
-arma::mat fGibbsym(const arma::mat& ar,  // will be updated
+Eigen::ArrayXXd fGibbsym(const Eigen::ArrayXXd& ar,  // will be updated
                    const int& nblock,
                    const int& ncombr,
                    const arma::mat& combr,   
@@ -387,14 +483,14 @@ arma::mat fGibbsym(const arma::mat& ar,  // will be updated
                    const arma::uvec& idcols,
                    const arma::uvec& ident,
                    const arma::uvec& ztncombr, //0 to ncombr - 1
-                   const arma::mat& ur, 
-                   const arma::mat& wr, 
+                   const Eigen::ArrayXXd& ur, 
+                   const Eigen::ArrayXXd& wr, 
                    const int& npu,
                    const int& npw,
                    const int& nr,
                    const int& R){
-  double potr   = 0;
-  arma::mat arp = ar;
+  double potr(0);
+  Eigen::ArrayXXd arp(ar);
   for(int t(0); t < R; ++ t){
     Gibbsymi(arp, potr, nblock, ncombr, combr, idrows, idcols, ident, ztncombr, ur, wr, npu, npw, nr);
   }
@@ -403,7 +499,7 @@ arma::mat fGibbsym(const arma::mat& ar,  // will be updated
 
 // same function for the case of directed network
 //[[Rcpp::export]]
-arma::mat fGibbdir(const arma::mat& ar,  // will be updated
+Eigen::ArrayXXd fGibbdir(const Eigen::ArrayXXd& ar,  // will be updated
                    const int& nblock,
                    const int& ncombr,
                    const arma::mat& combr,   
@@ -411,16 +507,16 @@ arma::mat fGibbdir(const arma::mat& ar,  // will be updated
                    const arma::uvec& idcols,
                    const arma::uvec& ident,
                    const arma::uvec& ztncombr, //0 to ncombr - 1
-                   const arma::mat& ur, 
-                   const arma::mat& vr, 
-                   const arma::mat& wr, 
+                   const Eigen::ArrayXXd& ur, 
+                   const Eigen::ArrayXXd& vr, 
+                   const Eigen::ArrayXXd& wr, 
                    const int& npu,
                    const int& npv,
                    const int& npw,
                    const int& nr,
                    const int& R){
   double potr   = 0;
-  arma::mat arp = ar;
+  Eigen::ArrayXXd arp = ar;
   for(int t(0); t < R; ++ t){
     Gibbdiri(arp, potr, nblock, ncombr, combr, idrows, idcols, ident, ztncombr, ur, vr, wr, npu, npv, npw, nr);
   }
@@ -429,7 +525,7 @@ arma::mat fGibbdir(const arma::mat& ar,  // will be updated
 
 // this function runs the Gibbs on the network fo simulate a^{prime} and exports the degree
 //[[Rcpp::export]]
-List fGibbsym2(const arma::mat& ar,  // will be updated
+List fGibbsym2(const Eigen::ArrayXXd& ar,  // will be updated
                const int& nblock,
                const int& ncombr,
                const arma::mat& combr,   
@@ -437,19 +533,19 @@ List fGibbsym2(const arma::mat& ar,  // will be updated
                const arma::uvec& idcols,
                const arma::uvec& ident,
                const arma::uvec& ztncombr, //0 to ncombr - 1
-               const arma::mat& ur, 
-               const arma::mat& wr, 
+               const Eigen::ArrayXXd& ur, 
+               const Eigen::ArrayXXd& wr, 
                const int& npu,
                const int& npw,
                const int& nr,
                const int& R){
-  double potr   = 0;
-  arma::mat arp = ar;
-  arma::mat deg(nr, R);
-  arma::vec outpot(R);
+  double potr(0);
+  Eigen::ArrayXXd arp(ar);
+  Eigen::ArrayXXd deg(nr, R);
+  Eigen::VectorXd outpot(R);
   for(int t(0); t < R; ++ t){
     Gibbsymi(arp, potr, nblock, ncombr, combr, idrows, idcols, ident, ztncombr, ur, wr, npu, npw, nr);
-    deg.col(t)  = arma::sum(arp, 1);
+    deg.col(t)  = arp.rowwise().sum();
     outpot(t)   = potr;
   }
   return List::create(Named("net") = arp, Named("deg") = deg, Named("pot") = outpot);
@@ -457,7 +553,7 @@ List fGibbsym2(const arma::mat& ar,  // will be updated
 
 // same function for the case of directed network
 //[[Rcpp::export]]
-List fGibbdir2(const arma::mat& ar,  // will be updated
+List fGibbdir2(const Eigen::ArrayXXd& ar,  // will be updated
                const int& nblock,
                const int& ncombr,
                const arma::mat& combr,   
@@ -465,21 +561,21 @@ List fGibbdir2(const arma::mat& ar,  // will be updated
                const arma::uvec& idcols,
                const arma::uvec& ident,
                const arma::uvec& ztncombr, //0 to ncombr - 1
-               const arma::mat& ur, 
-               const arma::mat& vr, 
-               const arma::mat& wr, 
+               const Eigen::ArrayXXd& ur, 
+               const Eigen::ArrayXXd& vr, 
+               const Eigen::ArrayXXd& wr, 
                const int& npu,
                const int& npv,
                const int& npw,
                const int& nr,
                const int& R){
   double potr   = 0;
-  arma::mat arp = ar;
-  arma::mat deg(nr, R);
-  arma::vec outpot(R);
+  Eigen::ArrayXXd arp = ar;
+  Eigen::ArrayXXd deg(nr, R);
+  Eigen::VectorXd outpot(R);
   for(int t(0); t < R; ++ t){
     Gibbdiri(arp, potr, nblock, ncombr, combr, idrows, idcols, ident, ztncombr, ur, vr, wr, npu, npv, npw, nr);
-    deg.col(t)  = arma::sum(arp, 1);
+    deg.col(t)  = arp.rowwise().sum();
     outpot(t)   = potr;
   }
   return List::create(Named("net") = arp, Named("deg") = deg, Named("pot") = outpot);
