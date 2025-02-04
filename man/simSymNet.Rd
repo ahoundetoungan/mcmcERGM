@@ -10,6 +10,7 @@ simSymNet(
   f_to_var.u,
   f_to_var.w,
   theta,
+  heterogeneity,
   size = NULL,
   init.net = NULL,
   nblock = 2,

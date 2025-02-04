@@ -13,6 +13,7 @@ simSymNet <- function(formula.u,
                       f_to_var.u, 
                       f_to_var.w,
                       theta,
+                      heterogeneity,
                       size        = NULL,
                       init.net    = NULL, 
                       nblock      = 2,
@@ -133,11 +134,50 @@ simSymNet <- function(formula.u,
     stop("length(theta) not equal to the number of parameters to be estimated")
   }
   
+  # ze and nu
+  het         <- FALSE
+  ze          <- rep(0, M)
+  nu          <- rep(0, M)
+  in.ze       <- FALSE 
+  in.nu       <- FALSE
+  if (!missing(heterogeneity)) {
+    stopifnot(inherits(heterogeneity, "list"))
+    if (!all(tolower(names(heterogeneity)) %in% c("zeta", "nu"))) stop("'heterogeneity' must be a list containing only 'zeta' and 'nu'")
+    names(heterogeneity) <- tolower(names(heterogeneity))
+    in.ze <- !is.null(heterogeneity$ze)
+    in.nu <- !is.null(heterogeneity$nu)
+    if (in.ze) {
+      ze  <- heterogeneity$ze
+    }
+    if (in.nu) {
+      nu  <- heterogeneity$nu
+    }
+    het   <- in.ze | in.nu
+  }
+  if (het) {
+    if (length(ze) == 1) {
+      ze  <- rep(ze, M)
+    } else if (length(ze) != M) {
+      stop("'zeta' must be either a scalar or a vector of length M")
+    }
+    if (length(nu) == 1) {
+      nu  <- rep(nu, M)
+    } else if (length(nu) != M) {
+      stop("'nu' must be either a scalar or a vector of length M")
+    }
+  } 
+  if (in.ze && nparu == 0) {
+    stop("'zeta' heterogeneity cannot be estimated if 'formula.u' is not defined")
+  }
+  if (in.nu && nparw == 0) {
+    stop("'nu' heterogeneity cannot be estimated if 'formula.w' is not defined")
+  }
+  
   # Utility
   uu          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
-  uu          <- futil(M = M, X = Xu, u = uu, theta = theta[1:nparu], npar = nparu, nvec = nvec, inter = inter.u)
-  uw          <- futil(M = M, X = Xw, u = uw, theta = theta[(nparu + 1):npar], npar = nparw, nvec = nvec, inter = inter.w)
+  uu          <- futil(M = M, X = Xu, u = uu, theta = theta[1:nparu], hetval = ze, npar = nparu, nvec = nvec, inter = inter.u)
+  uw          <- futil(M = M, X = Xw, u = uw, theta = theta[(nparu + 1):npar], hetval = nu, npar = nparw, nvec = nvec, inter = inter.w)
   
   # Simulations
   combr       <- ffindcom(nblock) 
@@ -194,6 +234,7 @@ simDirNet <- function(formula.u,
                       f_to_var.v,
                       f_to_var.w,
                       theta,
+                      heterogeneity,
                       size        = NULL,
                       init.net    = NULL, 
                       nblock      = 2,
@@ -227,7 +268,7 @@ simDirNet <- function(formula.u,
     if(!missing(f_to_var.w)){stop("f_to_var.w is defined without formula.w")}
   } else{
     if(missing(f_to_var.w)){stop("formula.w is defined without f_to_var.w")}
-    stopifnot(tolower(unlist(f_to_var.w)) %in% c("i", "j", "sum", "prod", "same", "adiff", "lower", "greater"))
+    stopifnot(tolower(unlist(f_to_var.w)) %in% c("sum", "prod", "same", "adiff"))
     f_to_var.w  <- ff_to_var(f_to_var.w)
   }
   if(!is.null(fgraph)){
@@ -349,14 +390,68 @@ simDirNet <- function(formula.u,
     stop("length(theta) not equal to the number of parameters to be estimated")
   }
   
+  # mu, nu, zeta
+  het         <- FALSE
+  ze          <- rep(0, M)
+  mu          <- rep(0, M)
+  nu          <- rep(0, M)
+  in.ze       <- FALSE 
+  in.mu       <- FALSE 
+  in.nu       <- FALSE
+  if (!missing(heterogeneity)){
+    stopifnot(inherits(heterogeneity, "list"))
+    if (!all(tolower(names(heterogeneity)) %in% c("mu", "nu", "zeta"))) stop("'heterogeneity' must be a list containing only 'zeta', 'mu', and 'nu'")
+    names(heterogeneity) <- tolower(names(heterogeneity))
+    in.ze <- !is.null(heterogeneity$zeta)
+    in.mu <- !is.null(heterogeneity$mu)
+    in.nu <- !is.null(heterogeneity$nu)
+    if (in.ze) {
+      ze  <- heterogeneity$zeta
+    }
+    if (in.mu) {
+      mu  <- heterogeneity$mu
+    }
+    if (in.nu) {
+      nu  <- heterogeneity$nu
+    }
+    het   <- in.mu | in.nu | in.ze
+  }
+  if (het) {
+    if (length(ze) == 1) {
+      ze  <- rep(ze, M)
+    } else if (length(ze) != M) {
+      stop("'zeta' must be either a scalar or a vector of length M")
+    }
+    if (length(mu) == 1) {
+      mu  <- rep(mu, M)
+    } else if (length(mu) != M) {
+      stop("'mu' must be either a scalar or a vector of length M")
+    }
+    if (length(nu) == 1) {
+      nu  <- rep(nu, M)
+    } else if (length(nu) != M) {
+      stop("'nu' must be either a scalar or a vector of length M")
+    }
+  } 
+  if (in.ze && nparu == 0) {
+    stop("'zeta' heterogeneity cannot be estimated if 'formula.u' is not defined")
+  }
+  if (in.mu && nparv == 0) {
+    stop("'mu' heterogeneity cannot be estimated if 'formula.v' is not defined")
+  }
+  if (in.nu && nparw == 0) {
+    stop("'nu' heterogeneity cannot be estimated if 'formula.w' is not defined")
+  }
+  
+  
   # Utility
   uu          <- rep(list(matrix(0, 1, 1)), times = M)
   uv          <- rep(list(matrix(0, 1, 1)), times = M)
   uw          <- rep(list(matrix(0, 1, 1)), times = M)
 
-  uu          <- futil(M = M, X = Xu, u = uu, theta = head(theta, nparu), npar = nparu, nvec = nvec, inter = inter.u)
-  uv          <- futil(M = M, X = Xv, u = uv, theta = theta[(nparu + 1):(nparu + nparv)], npar = nparv, nvec = nvec, inter = inter.v)
-  uw          <- futil(M = M, X = Xw, u = uw, theta = tail(theta, nparw), npar = nparw, nvec = nvec, inter = inter.w)
+  uu          <- futil(M = M, X = Xu, u = uu, theta = head(theta, nparu), hetval = ze, npar = nparu, nvec = nvec, inter = inter.u)
+  uv          <- futil(M = M, X = Xv, u = uv, theta = theta[(nparu + 1):(nparu + nparv)], hetval = mu, npar = nparv, nvec = nvec, inter = inter.v)
+  uw          <- futil(M = M, X = Xw, u = uw, theta = tail(theta, nparw), hetval = nu, npar = nparw, nvec = nvec, inter = inter.w)
   
   # Simulations
   combr       <- ffindcom(nblock) 

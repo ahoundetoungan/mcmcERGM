@@ -941,7 +941,7 @@ mcmcDirNet <- function(network,
 }
 
 # function that computes the utilities
-futil        <- function(M, X, u, theta, hetval = rep(0, M), npar, nvec, inter){
+futil        <- function(M, X, u, theta, hetval, npar, nvec, inter){
   if(!is.null(X)){
     # cat("npar ", npar, "\n")
     # cat("theta ", theta, "\n")
